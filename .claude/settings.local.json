@@ -1,0 +1,7 @@
+{
+  "permissions": {
+    "allow": [
+      "PowerShell(if \\($?\\) { \"DIR_OK\" } else { \"DOES_NOT_EXIST\" })"
+    ]
+  }
+}
