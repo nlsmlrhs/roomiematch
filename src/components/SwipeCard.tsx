@@ -6,6 +6,7 @@ import {
 } from 'lucide-react'
 import type { Profile } from '../types'
 import { useApp } from '../context/AppContext'
+import { OccupancyStrip } from './OccupancyStrip'
 
 interface Props {
   profile: Profile
@@ -24,6 +25,7 @@ function Badge({ label, color = 'gray' }: { label: string; color?: string }) {
     green: 'bg-green-100 text-green-700',
     amber: 'bg-amber-100 text-amber-700',
     purple: 'bg-purple-100 text-purple-700',
+    rose: 'bg-rose-100 text-rose-700',
   }
   return (
     <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${palettes[color] ?? palettes.gray}`}>
@@ -55,18 +57,6 @@ export function SwipeCard({ profile, onSwipe, zIndex = 0, isTop = false }: Props
     else if (info.offset.x < -SWIPE_THRESHOLD) onSwipe('left')
   }
 
-  const keyStats =
-    profile.kind === 'seeker'
-      ? [
-          { label: `bis ${profile.budgetMax} €/Mo`, color: 'green' as const },
-          { label: `ab ${new Date(profile.movingDate).toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit', year: '2-digit' })}`, color: 'blue' as const },
-          { label: profile.smoker ? 'Raucher 🚬' : 'Nichtraucher', color: 'gray' as const },
-        ]
-      : [
-          { label: `${profile.rentMonthly} €/Mo`, color: 'green' as const },
-          { label: `ab ${new Date(profile.availableFrom).toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit', year: '2-digit' })}`, color: 'blue' as const },
-          { label: `${profile.roommates} Mitbewohner`, color: 'purple' as const },
-        ]
 
   return (
     <motion.div
@@ -178,7 +168,7 @@ export function SwipeCard({ profile, onSwipe, zIndex = 0, isTop = false }: Props
         {/* Info panel — CSS transition for reliable px/% height animation */}
         <div
           className="absolute bottom-0 left-0 right-0 bg-white rounded-t-3xl overflow-hidden flex flex-col transition-all duration-300 ease-out"
-          style={{ height: expanded ? '62%' : '76px' }}
+          style={{ height: expanded ? '62%' : '84px' }}
         >
           {/* Toggle strip — always visible */}
           <button
@@ -193,12 +183,46 @@ export function SwipeCard({ profile, onSwipe, zIndex = 0, isTop = false }: Props
                 <span className="text-xs font-medium">Weniger anzeigen</span>
               </div>
             ) : (
-              <div className="flex items-center gap-2">
-                <div className="flex gap-1.5 flex-wrap">
-                  {keyStats.map((s) => (
-                    <Badge key={s.label} label={s.label} color={s.color} />
-                  ))}
-                </div>
+              <div className="w-full px-3 flex items-center gap-1.5">
+                {profile.kind === 'flatshare' ? (
+                  <>
+                    <div className="flex-1 bg-green-50 rounded-xl py-1.5 px-2 min-w-0">
+                      <p className="text-[10px] text-gray-400 leading-none mb-0.5">Miete</p>
+                      <p className="text-xs font-bold text-green-700 leading-none truncate">{profile.rentMonthly} €</p>
+                    </div>
+                    <div className="flex-1 bg-indigo-50 rounded-xl py-1.5 px-2 min-w-0">
+                      <p className="text-[10px] text-gray-400 leading-none mb-0.5">Frei ab</p>
+                      <p className="text-xs font-bold text-indigo-700 leading-none truncate">
+                        {new Date(profile.availableFrom).toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit', year: '2-digit' })}
+                      </p>
+                    </div>
+                    <div className="flex-1 bg-purple-50 rounded-xl py-1.5 px-2 min-w-0">
+                      <p className="text-[10px] text-gray-400 leading-none mb-0.5">Belegung</p>
+                      <div className="flex items-center">
+                        <OccupancyStrip genders={profile.roommateGenders} size="sm" />
+                      </div>
+                    </div>
+                  </>
+                ) : (
+                  <>
+                    <div className="flex-1 bg-green-50 rounded-xl py-1.5 px-2 min-w-0">
+                      <p className="text-[10px] text-gray-400 leading-none mb-0.5">Budget</p>
+                      <p className="text-xs font-bold text-green-700 leading-none truncate">bis {profile.budgetMax} €</p>
+                    </div>
+                    <div className="flex-1 bg-indigo-50 rounded-xl py-1.5 px-2 min-w-0">
+                      <p className="text-[10px] text-gray-400 leading-none mb-0.5">Einzug ab</p>
+                      <p className="text-xs font-bold text-indigo-700 leading-none truncate">
+                        {new Date(profile.movingDate).toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit', year: '2-digit' })}
+                      </p>
+                    </div>
+                    <div className={`flex-1 rounded-xl py-1.5 px-2 min-w-0 ${profile.smoker ? 'bg-amber-50' : 'bg-gray-50'}`}>
+                      <p className="text-[10px] text-gray-400 leading-none mb-0.5">Rauchen</p>
+                      <p className={`text-xs font-bold leading-none ${profile.smoker ? 'text-amber-700' : 'text-gray-500'}`}>
+                        {profile.smoker ? 'Raucher' : 'Nein'}
+                      </p>
+                    </div>
+                  </>
+                )}
                 <ChevronUp className="w-4 h-4 text-pink-400 flex-shrink-0" />
               </div>
             )}
@@ -278,8 +302,19 @@ export function SwipeCard({ profile, onSwipe, zIndex = 0, isTop = false }: Props
                 />
                 <InfoRow
                   icon={<Users className="w-4 h-4 text-purple-500" />}
-                  label="Mitbewohner"
-                  content={<span className="text-sm text-gray-700">{profile.roommates} Person{profile.roommates !== 1 ? 'en' : ''} bereits da</span>}
+                  label="Mitbewohner:innen"
+                  content={(() => {
+                    const counts: Record<string, number> = {}
+                    for (const g of profile.roommateGenders) counts[g] = (counts[g] ?? 0) + 1
+                    const COLOR: Record<string, string> = { männlich: 'blue', weiblich: 'rose', divers: 'amber' }
+                    return (
+                      <div className="flex flex-wrap gap-1">
+                        {Object.entries(counts).map(([g, n]) => (
+                          <Badge key={g} label={`${n}× ${g}`} color={COLOR[g] ?? 'gray'} />
+                        ))}
+                      </div>
+                    )
+                  })()}
                 />
                 <InfoRow
                   icon={<Euro className="w-4 h-4 text-green-500" />}

@@ -1,11 +1,20 @@
 export type DailyRhythm = 'early-bird' | 'night-owl' | 'flexible'
 
+export interface ProfilePrompt {
+  question: string
+  answer: string
+}
+
+export type Gender = 'männlich' | 'weiblich' | 'divers'
+export type PreferredGender = 'alle' | Gender
+
 export interface Seeker {
   kind: 'seeker'
   id: string
   firstName: string
   lastName: string
   age: number
+  gender: Gender
   photos: string[]
   occupation: string
   hobbies: string[]
@@ -15,6 +24,7 @@ export interface Seeker {
   budgetMax: number
   movingDate: string
   bio: string
+  prompts?: ProfilePrompt[]
 }
 
 export interface Flatshare {
@@ -29,6 +39,14 @@ export interface Flatshare {
   roommates: number
   description: string
   tags: string[]
+  amenities: string[]
+  roommateLanguages: string[]
+  roommateGenders: string[]
+  preferredGender: PreferredGender
+  smokingAllowed: boolean
+  wgRhythm: DailyRhythm
+  preferredAgeMin: number
+  preferredAgeMax: number
 }
 
 export type Profile = Seeker | Flatshare

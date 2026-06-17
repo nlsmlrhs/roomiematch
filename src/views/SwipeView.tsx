@@ -29,7 +29,7 @@ export function SwipeView() {
             onClick={() => { setUserRole('seeker'); setViewMode('card') }}
             className={`flex-1 py-2 rounded-xl text-sm font-semibold transition-all duration-200 ${userRole === 'seeker' ? 'bg-white shadow-sm text-pink-500' : 'text-gray-400'}`}
           >
-            🏠 WGs finden
+            🏠 WGs
           </button>
           <button
             onClick={() => { setUserRole('wg'); setViewMode('card') }}
@@ -57,7 +57,7 @@ export function SwipeView() {
       </div>
 
       {viewMode === 'list' ? (
-        <ListView queue={queue} />
+        <ListView />
       ) : visible.length > 0 ? (
         <>
           {/* Card stack */}

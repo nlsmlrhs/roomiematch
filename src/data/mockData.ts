@@ -7,6 +7,7 @@ export const mockSeekers: Seeker[] = [
     firstName: 'Lena',
     lastName: 'Wagner',
     age: 24,
+    gender: 'weiblich',
     photos: [
       'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=600&q=80',
       'https://images.unsplash.com/photo-1517841905240-472988babdf9?w=600&q=80',
@@ -19,6 +20,10 @@ export const mockSeekers: Seeker[] = [
     budgetMax: 650,
     movingDate: '2026-08-01',
     bio: 'Ich suche eine entspannte WG, in der man abends auch mal zusammen kocht. Bin tagsüber viel an der Uni, abends gerne zu Hause. Sauber, aber kein Reinlichkeitsfanatiker.',
+    prompts: [
+      { question: 'Was ich an meiner zukünftigen WG schätzen würde …', answer: 'Dass man abends einfach zusammen in der Küche hängt, ohne dass es ein Pflichtprogramm ist.' },
+      { question: 'In der WG bin ich für … zuständig', answer: 'Das Kochen am Wochenende. Ich liebe es, für andere zu kochen.' },
+    ],
   },
   {
     kind: 'seeker',
@@ -26,6 +31,7 @@ export const mockSeekers: Seeker[] = [
     firstName: 'Jonas',
     lastName: 'Becker',
     age: 27,
+    gender: 'männlich',
     photos: [
       'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=600&q=80',
       'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=600&q=80',
@@ -38,6 +44,10 @@ export const mockSeekers: Seeker[] = [
     budgetMax: 900,
     movingDate: '2026-07-15',
     bio: 'Arbeite von zu Hause – brauche daher gutes Internet und ein ruhiges Zimmer. Abends gerne gesellig, Wochenenden oft draußen. Suche WG mit eigenem Rhythm.',
+    prompts: [
+      { question: 'Mein perfektes Wochenende …', answer: 'Samstag bouldert, Sonntag Brettspiel-Abend mit der WG und selbstgebrautem Pale Ale.' },
+      { question: 'Warum ich ausziehe …', answer: 'Mein letzter Mitbewohner hat täglich um 6 Uhr morgens Gitarre gespielt. Ich bin Remote-Dev und schlafe bis 9.' },
+    ],
   },
   {
     kind: 'seeker',
@@ -45,6 +55,7 @@ export const mockSeekers: Seeker[] = [
     firstName: 'Mia',
     lastName: 'Hoffmann',
     age: 22,
+    gender: 'weiblich',
     photos: [
       'https://images.unsplash.com/photo-1529626455594-4ff0802cfb7e?w=600&q=80',
     ],
@@ -56,6 +67,9 @@ export const mockSeekers: Seeker[] = [
     budgetMax: 550,
     movingDate: '2026-09-01',
     bio: 'Früh aufstehen, früh schlafen – Medizin-Studentin eben. Ich bin ruhig, ordentlich und sehr offen für WG-Abende wenn die Zeit es zulässt.',
+    prompts: [
+      { question: 'Auf WG-Abenden bin ich meistens …', answer: 'Die, die um 22 Uhr müde ins Bett geht – aber vorher den besten Hummus mitbringt.' },
+    ],
   },
   {
     kind: 'seeker',
@@ -63,6 +77,7 @@ export const mockSeekers: Seeker[] = [
     firstName: 'Tom',
     lastName: 'Richter',
     age: 29,
+    gender: 'männlich',
     photos: [
       'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=600&q=80',
     ],
@@ -93,7 +108,15 @@ export const mockFlatshares: Flatshare[] = [
     roommates: 2,
     description:
       'Wir sind zwei Freundinnen (25, 26) aus dem Kulturbereich und suchen eine dritte Person, die gerne zusammen kocht, aber auch Eigenraum respektiert. WG-Abende ja, Zwang nein.',
-    tags: ['Kochen zusammen', 'Haustierfreundlich', 'Balkon', 'Fahrradkeller', 'LGBTQ+ freundlich'],
+    tags: ['Kochen zusammen', 'Haustierfreundlich', 'LGBTQ+ freundlich'],
+    amenities: ['balkon', 'fahrradkeller', 'haustiere', 'badewanne'],
+    roommateLanguages: ['Deutsch', 'Englisch', 'Spanisch'],
+    roommateGenders: ['weiblich', 'weiblich'],
+    preferredGender: 'alle',
+    smokingAllowed: false,
+    wgRhythm: 'early-bird',
+    preferredAgeMin: 22,
+    preferredAgeMax: 30,
   },
   {
     kind: 'flatshare',
@@ -110,7 +133,15 @@ export const mockFlatshares: Flatshare[] = [
     roommates: 2,
     description:
       'Zwei Devs suchen dritten Mitbewohner. Alle arbeiten remote – stilles Arbeitsklima tagsüber, gesellige Abende optional. Fiber-Leitung, stehende Schreibtische, 3 Bäder.',
-    tags: ['Remote-freundlich', 'Glasfaser', 'Stehschreibtisch', 'Zweck-WG', 'Keine Partys'],
+    tags: ['Remote-freundlich', 'Zweck-WG', 'Keine Partys'],
+    amenities: ['aufzug', 'keller', 'parkplatz', 'moebliert'],
+    roommateLanguages: ['Deutsch', 'Englisch'],
+    roommateGenders: ['männlich', 'divers'],
+    preferredGender: 'alle',
+    smokingAllowed: false,
+    wgRhythm: 'flexible',
+    preferredAgeMin: 24,
+    preferredAgeMax: 35,
   },
   {
     kind: 'flatshare',
@@ -126,7 +157,15 @@ export const mockFlatshares: Flatshare[] = [
     roommates: 3,
     description:
       'Wir sind eine bunte WG aus Designerin, Musikerin und Sozialarbeiter. Das Zimmer ist kompakt aber die Gemeinschaft ist groß. Wir feiern gerne, kochen oft zusammen und haben immer ein offenes Ohr.',
-    tags: ['Kreativ', 'Gemeinschaft', 'WG-Abende', 'Garten', 'Hund vorhanden'],
+    tags: ['Kreativ', 'Gemeinschaft', 'WG-Abende'],
+    amenities: ['garten', 'haustiere', 'balkon', 'waschmaschine'],
+    roommateLanguages: ['Deutsch', 'Englisch', 'Französisch'],
+    roommateGenders: ['weiblich', 'weiblich', 'männlich'],
+    preferredGender: 'alle',
+    smokingAllowed: true,
+    wgRhythm: 'night-owl',
+    preferredAgeMin: 20,
+    preferredAgeMax: 32,
   },
   {
     kind: 'flatshare',
@@ -142,7 +181,15 @@ export const mockFlatshares: Flatshare[] = [
     roommates: 1,
     description:
       'Ich (28, Ingenieur) suche eine zweite Person für meine 2er-WG. Ruhige Gegend, frisch saniertes Bad, große Gemeinschaftsküche. Bin viel unterwegs, daher sehr entspannte Atmosphäre.',
-    tags: ['Ruhig', '2er-WG', 'Neubau', 'Tiefgarage', 'Zweck-WG ok'],
+    tags: ['Ruhig', '2er-WG', 'Neubau', 'Zweck-WG ok'],
+    amenities: ['parkplatz', 'badewanne', 'aufzug', 'spuelmaschine', 'klimaanlage'],
+    roommateLanguages: ['Deutsch', 'Englisch'],
+    roommateGenders: ['männlich'],
+    preferredGender: 'alle',
+    smokingAllowed: false,
+    wgRhythm: 'flexible',
+    preferredAgeMin: 25,
+    preferredAgeMax: 38,
   },
 ]
 

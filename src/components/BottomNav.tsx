@@ -10,13 +10,14 @@ const tabs: { view: AppView; icon: typeof Home; label: string }[] = [
 ]
 
 export function BottomNav() {
-  const { view, setView, matches } = useApp()
+  const { view, setView, matches, profileVisible } = useApp()
 
   return (
     <nav className="flex-shrink-0 bg-white border-t border-pink-100 flex safe-bottom">
       {tabs.map(({ view: v, icon: Icon, label }) => {
         const active = view === v
         const badge = v === 'matches' && matches.length > 0
+        const pauseDot = v === 'profile-setup' && !profileVisible
 
         return (
           <button
@@ -36,6 +37,9 @@ export function BottomNav() {
                 <span className="absolute -top-1 -right-1 w-4 h-4 bg-gradient-to-br from-pink-500 to-rose-500 text-white text-[9px] font-bold rounded-full flex items-center justify-center shadow-sm">
                   {matches.length}
                 </span>
+              )}
+              {pauseDot && (
+                <span className="absolute -top-1 -right-1 w-3 h-3 bg-gray-400 rounded-full border-2 border-white" />
               )}
             </div>
             <span className={`text-[10px] font-medium transition-colors ${active ? 'text-pink-500' : 'text-gray-400'}`}>

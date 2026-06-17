@@ -1,8 +1,17 @@
 import { useState } from 'react'
 import { motion } from 'framer-motion'
-import { Check, ChevronRight, Upload } from 'lucide-react'
+import { Check, ChevronRight, Upload, X, Plus } from 'lucide-react'
 import { useApp } from '../context/AppContext'
-import type { DailyRhythm } from '../types'
+import type { DailyRhythm, ProfilePrompt } from '../types'
+
+const PROMPT_QUESTIONS = [
+  'Was ich an meiner zukünftigen WG schätzen würde …',
+  'Mein perfektes Wochenende …',
+  'In der WG bin ich für … zuständig',
+  'Warum ich ausziehe …',
+  'Bei mir zu Hause findet man immer …',
+  'Auf WG-Abenden bin ich meistens …',
+]
 
 const HOBBY_OPTIONS = ['Kochen', 'Sport', 'Gaming', 'Musik', 'Reisen', 'Klettern', 'Kunst', 'Lesen', 'Fotografie', 'Yoga', 'Kino', 'Brettspiele']
 const LANG_OPTIONS = ['Deutsch', 'Englisch', 'Spanisch', 'Französisch', 'Türkisch', 'Arabisch', 'Chinesisch', 'Italienisch']
@@ -61,7 +70,7 @@ function Input({ ...props }: React.InputHTMLAttributes<HTMLInputElement>) {
 }
 
 export function ProfileSetup() {
-  const { setView } = useApp()
+  const { setView, profileVisible, setProfileVisible } = useApp()
   const [saved, setSaved] = useState(false)
 
   const [firstName, setFirstName] = useState('')
@@ -74,6 +83,17 @@ export function ProfileSetup() {
   const [budget, setBudget] = useState('')
   const [movingDate, setMovingDate] = useState('')
   const [bio, setBio] = useState('')
+  const [prompts, setPrompts] = useState<ProfilePrompt[]>([])
+
+  function addPrompt() {
+    if (prompts.length < 3) setPrompts([...prompts, { question: PROMPT_QUESTIONS[0], answer: '' }])
+  }
+  function removePrompt(i: number) {
+    setPrompts(prompts.filter((_, idx) => idx !== i))
+  }
+  function updatePrompt(i: number, field: keyof ProfilePrompt, value: string) {
+    setPrompts(prompts.map((p, idx) => idx === i ? { ...p, [field]: value } : p))
+  }
 
   if (saved) {
     return (
@@ -102,6 +122,30 @@ export function ProfileSetup() {
       <div className="px-4 py-4 border-b border-gray-100">
         <h2 className="text-xl font-bold text-gray-900">Mein Profil</h2>
         <p className="text-sm text-gray-400 mt-0.5">So siehst du für andere aus</p>
+      </div>
+
+      {/* Visibility toggle */}
+      <div className="mx-4 mt-4 bg-white rounded-2xl border border-gray-100 shadow-sm p-4 flex items-center justify-between">
+        <div className="flex items-center gap-3">
+          <span className="text-xl">{profileVisible ? '🔍' : '💤'}</span>
+          <div>
+            <p className="text-sm font-semibold text-gray-900">
+              {profileVisible ? 'Profil aktiv' : 'Profil pausiert'}
+            </p>
+            <p className="text-xs text-gray-400">
+              {profileVisible ? 'Für andere sichtbar' : 'Wirst nicht angezeigt'}
+            </p>
+          </div>
+        </div>
+        <button
+          type="button"
+          onClick={() => setProfileVisible(!profileVisible)}
+          className={`relative w-12 h-6 rounded-full transition-colors flex-shrink-0 ${profileVisible ? 'bg-green-400' : 'bg-gray-300'}`}
+        >
+          <span
+            className={`absolute top-0.5 w-5 h-5 bg-white rounded-full shadow transition-transform ${profileVisible ? 'translate-x-6' : 'translate-x-0.5'}`}
+          />
+        </button>
       </div>
 
       <div className="px-4 py-4 space-y-5">
@@ -134,6 +178,46 @@ export function ProfileSetup() {
             placeholder="Kurze Beschreibung über dich…"
             className="w-full bg-gray-100 rounded-xl px-3.5 py-2.5 text-sm outline-none focus:ring-2 focus:ring-pink-300 resize-none transition"
           />
+        </Field>
+        <Field label="Kurz-Prompts">
+          <div className="space-y-3">
+            {prompts.map((p, i) => (
+              <div key={i} className="bg-gray-50 rounded-2xl p-3 space-y-2 relative">
+                <button
+                  type="button"
+                  onClick={() => removePrompt(i)}
+                  className="absolute top-2.5 right-2.5 w-5 h-5 flex items-center justify-center text-gray-400"
+                >
+                  <X className="w-3.5 h-3.5" />
+                </button>
+                <select
+                  value={p.question}
+                  onChange={(e) => updatePrompt(i, 'question', e.target.value)}
+                  className="w-full bg-white rounded-xl px-3 py-2 text-xs text-gray-600 border border-gray-200 outline-none pr-2"
+                >
+                  {PROMPT_QUESTIONS.map((q) => (
+                    <option key={q} value={q}>{q}</option>
+                  ))}
+                </select>
+                <textarea
+                  rows={2}
+                  value={p.answer}
+                  onChange={(e) => updatePrompt(i, 'answer', e.target.value)}
+                  placeholder="Deine Antwort…"
+                  className="w-full bg-white rounded-xl px-3 py-2 text-sm border border-gray-200 outline-none focus:ring-2 focus:ring-pink-300 resize-none transition"
+                />
+              </div>
+            ))}
+            {prompts.length < 3 && (
+              <button
+                type="button"
+                onClick={addPrompt}
+                className="w-full py-2.5 rounded-xl border-2 border-dashed border-gray-200 text-sm text-gray-400 flex items-center justify-center gap-1.5"
+              >
+                <Plus className="w-4 h-4" /> Prompt hinzufügen
+              </button>
+            )}
+          </div>
         </Field>
         <Field label="Hobbys">
           <MultiSelect options={HOBBY_OPTIONS} selected={hobbies} onChange={setHobbies} color="pink" />

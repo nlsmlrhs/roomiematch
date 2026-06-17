@@ -1,11 +1,29 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
-  ArrowLeft, MapPin,
+  ArrowLeft, MapPin, Users, ExternalLink,
   Languages, Tag, Sun, Moon, Minus, Cigarette, CigaretteOff, ChevronLeft, ChevronRight,
+  User, CalendarRange,
+  Bath, Shirt, Utensils, Trees, Car, Bike, Archive, ArrowUpDown, Home, Dog, Wind,
+  type LucideIcon,
 } from 'lucide-react'
 import { useApp } from '../context/AppContext'
 import type { Profile } from '../types'
+
+const AMENITY_MAP: Record<string, { label: string; Icon: LucideIcon }> = {
+  balkon:        { label: 'Balkon',        Icon: Sun },
+  badewanne:     { label: 'Badewanne',     Icon: Bath },
+  waschmaschine: { label: 'Waschmaschine', Icon: Shirt },
+  spuelmaschine: { label: 'Spülmaschine',  Icon: Utensils },
+  garten:        { label: 'Garten',        Icon: Trees },
+  parkplatz:     { label: 'Parkplatz',     Icon: Car },
+  fahrradkeller: { label: 'Fahrradkeller', Icon: Bike },
+  keller:        { label: 'Keller',        Icon: Archive },
+  aufzug:        { label: 'Aufzug',        Icon: ArrowUpDown },
+  moebliert:     { label: 'Möbliert',      Icon: Home },
+  haustiere:     { label: 'Haustiere ok',  Icon: Dog },
+  klimaanlage:   { label: 'Klimaanlage',   Icon: Wind },
+}
 
 function Badge({ label, color = 'gray' }: { label: string; color?: string }) {
   const palettes: Record<string, string> = {
@@ -15,12 +33,17 @@ function Badge({ label, color = 'gray' }: { label: string; color?: string }) {
     blue: 'bg-blue-100 text-blue-700',
     purple: 'bg-purple-100 text-purple-700',
     amber: 'bg-amber-100 text-amber-700',
+    rose: 'bg-rose-100 text-rose-700',
   }
   return (
     <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${palettes[color] ?? palettes.gray}`}>
       {label}
     </span>
   )
+}
+
+function SectionTitle({ children }: { children: React.ReactNode }) {
+  return <p className="text-sm font-semibold text-gray-900 mb-2">{children}</p>
 }
 
 function InfoRow({ icon, label, children }: { icon: React.ReactNode; label: string; children: React.ReactNode }) {
@@ -31,6 +54,90 @@ function InfoRow({ icon, label, children }: { icon: React.ReactNode; label: stri
         <p className="text-xs text-gray-400 mb-1">{label}</p>
         {children}
       </div>
+    </div>
+  )
+}
+
+function RhythmLabel({ rhythm }: { rhythm: string }) {
+  if (rhythm === 'early-bird') return <Badge label="Frühaufsteher" color="amber" />
+  if (rhythm === 'night-owl') return <Badge label="Nachtmensch" color="purple" />
+  return <Badge label="Flexibel" color="gray" />
+}
+
+function RhythmIcon({ rhythm }: { rhythm: string }) {
+  if (rhythm === 'early-bird') return <Sun className="w-4 h-4 text-amber-500" />
+  if (rhythm === 'night-owl') return <Moon className="w-4 h-4 text-indigo-500" />
+  return <Minus className="w-4 h-4 text-gray-400" />
+}
+
+const GENDER_BADGE_COLOR: Record<string, string> = {
+  männlich: 'blue',
+  weiblich: 'rose',
+  divers: 'amber',
+}
+
+function GenderBadges({ genders }: { genders: string[] }) {
+  const counts: Record<string, number> = {}
+  for (const g of genders) counts[g] = (counts[g] ?? 0) + 1
+  return (
+    <div className="flex flex-wrap gap-1">
+      {Object.entries(counts).map(([g, n]) => (
+        <Badge key={g} label={`${n}× ${g}`} color={GENDER_BADGE_COLOR[g] ?? 'gray'} />
+      ))}
+    </div>
+  )
+}
+
+function AddressMap({ address }: { address: string }) {
+  const [coords, setCoords] = useState<[number, number] | null>(null)
+  const [failed, setFailed] = useState(false)
+
+  useEffect(() => {
+    setCoords(null)
+    setFailed(false)
+    fetch(
+      `https://nominatim.openstreetmap.org/search?format=json&limit=1&countrycodes=de&q=${encodeURIComponent(address)}`,
+      { headers: { Accept: 'application/json' } },
+    )
+      .then((r) => r.json())
+      .then((data) => {
+        if (data[0]) setCoords([parseFloat(data[0].lat), parseFloat(data[0].lon)])
+        else setFailed(true)
+      })
+      .catch(() => setFailed(true))
+  }, [address])
+
+  const mapsUrl = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(address)}`
+
+  if (failed) return null
+
+  return (
+    <div className="py-4 border-b border-gray-100">
+      <div className="flex items-center justify-between mb-2">
+        <SectionTitle>Lage</SectionTitle>
+        <a
+          href={mapsUrl}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="flex items-center gap-1 text-xs text-pink-500 font-medium"
+        >
+          In Maps öffnen <ExternalLink className="w-3 h-3" />
+        </a>
+      </div>
+
+      {!coords ? (
+        <div className="h-44 bg-gray-100 rounded-2xl flex items-center justify-center">
+          <p className="text-xs text-gray-400">Karte wird geladen…</p>
+        </div>
+      ) : (
+        <div className="rounded-2xl overflow-hidden border border-gray-100" style={{ height: 176 }}>
+          <iframe
+            title="Karte"
+            src={`https://www.openstreetmap.org/export/embed.html?bbox=${coords[1] - 0.012},${coords[0] - 0.008},${coords[1] + 0.012},${coords[0] + 0.008}&layer=mapnik&marker=${coords[0]},${coords[1]}`}
+            style={{ width: '100%', height: '100%', border: 0 }}
+          />
+        </div>
+      )}
     </div>
   )
 }
@@ -51,10 +158,8 @@ function DetailContent({ profile, onClose }: { profile: Profile; onClose: () => 
           </div>
         )}
 
-        {/* Gradient overlay */}
         <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-black/20 pointer-events-none" />
 
-        {/* Back button */}
         <button
           onClick={onClose}
           className="absolute top-10 left-4 z-10 w-9 h-9 rounded-full bg-black/30 backdrop-blur-sm flex items-center justify-center active:bg-black/50 transition-colors"
@@ -62,7 +167,6 @@ function DetailContent({ profile, onClose }: { profile: Profile; onClose: () => 
           <ArrowLeft className="w-5 h-5 text-white" />
         </button>
 
-        {/* Photo navigation */}
         {images.length > 1 && (
           <>
             <button
@@ -87,7 +191,6 @@ function DetailContent({ profile, onClose }: { profile: Profile; onClose: () => 
           </>
         )}
 
-        {/* Title overlay on photo */}
         <div className="absolute bottom-4 left-4 right-4 pointer-events-none">
           {profile.kind === 'flatshare' ? (
             <>
@@ -136,15 +239,79 @@ function DetailContent({ profile, onClose }: { profile: Profile; onClose: () => 
             {/* Description */}
             {profile.description && (
               <div className="py-4 border-b border-gray-100">
-                <p className="text-sm font-semibold text-gray-900 mb-2">Über die WG</p>
+                <SectionTitle>Über die WG</SectionTitle>
                 <p className="text-sm text-gray-600 leading-relaxed">{profile.description}</p>
+              </div>
+            )}
+
+            {/* WG & Mitbewohner */}
+            <div className="py-2 border-b border-gray-100">
+              <SectionTitle>WG & Mitbewohner</SectionTitle>
+              <InfoRow icon={<RhythmIcon rhythm={profile.wgRhythm} />} label="Tagesrhythmus">
+                <RhythmLabel rhythm={profile.wgRhythm} />
+              </InfoRow>
+              <InfoRow
+                icon={profile.smokingAllowed
+                  ? <Cigarette className="w-4 h-4 text-amber-500" />
+                  : <CigaretteOff className="w-4 h-4 text-gray-400" />}
+                label="Rauchen"
+              >
+                <Badge label={profile.smokingAllowed ? 'Erlaubt' : 'Nicht erlaubt'} color={profile.smokingAllowed ? 'amber' : 'gray'} />
+              </InfoRow>
+              {profile.roommateLanguages.length > 0 && (
+                <InfoRow icon={<Languages className="w-4 h-4 text-blue-500" />} label="Sprachen in der WG">
+                  <div className="flex flex-wrap gap-1">
+                    {profile.roommateLanguages.map((l) => <Badge key={l} label={l} color="blue" />)}
+                  </div>
+                </InfoRow>
+              )}
+              {profile.roommateGenders.length > 0 && (
+                <InfoRow icon={<Users className="w-4 h-4 text-purple-500" />} label="Mitbewohner:innen">
+                  <GenderBadges genders={profile.roommateGenders} />
+                </InfoRow>
+              )}
+            </div>
+
+            {/* Wen suchen wir? */}
+            <div className="py-2 border-b border-gray-100">
+              <SectionTitle>Wen suchen wir?</SectionTitle>
+              <InfoRow icon={<User className="w-4 h-4 text-pink-500" />} label="Geschlecht">
+                <Badge
+                  label={profile.preferredGender === 'alle' ? 'Alle willkommen' : profile.preferredGender}
+                  color={profile.preferredGender === 'alle' ? 'green' : 'pink'}
+                />
+              </InfoRow>
+              <InfoRow icon={<CalendarRange className="w-4 h-4 text-indigo-500" />} label="Alter">
+                <span className="text-sm text-gray-700">{profile.preferredAgeMin} – {profile.preferredAgeMax} Jahre</span>
+              </InfoRow>
+            </div>
+
+            {/* Map */}
+            <AddressMap address={profile.address} />
+
+            {/* Amenities */}
+            {profile.amenities.length > 0 && (
+              <div className="py-4 border-b border-gray-100">
+                <SectionTitle>Ausstattung</SectionTitle>
+                <div className="grid grid-cols-2 gap-x-4 gap-y-2.5">
+                  {profile.amenities.map((id) => {
+                    const a = AMENITY_MAP[id]
+                    if (!a) return null
+                    return (
+                      <div key={id} className="flex items-center gap-2">
+                        <a.Icon className="w-4 h-4 text-gray-400 flex-shrink-0" />
+                        <span className="text-sm text-gray-700">{a.label}</span>
+                      </div>
+                    )
+                  })}
+                </div>
               </div>
             )}
 
             {/* Tags */}
             {profile.tags.length > 0 && (
               <div className="py-4">
-                <p className="text-sm font-semibold text-gray-900 mb-2">Ausstattung & Extras</p>
+                <SectionTitle>Vibe & Extras</SectionTitle>
                 <div className="flex flex-wrap gap-1.5">
                   {profile.tags.map((t) => <Badge key={t} label={t} color="pink" />)}
                 </div>
@@ -170,25 +337,45 @@ function DetailContent({ profile, onClose }: { profile: Profile; onClose: () => 
             {/* Bio */}
             {profile.bio && (
               <div className="py-4 border-b border-gray-100">
-                <p className="text-sm font-semibold text-gray-900 mb-2">Über mich</p>
+                <SectionTitle>Über mich</SectionTitle>
                 <p className="text-sm text-gray-600 leading-relaxed">{profile.bio}</p>
+              </div>
+            )}
+
+            {/* Prompts */}
+            {profile.prompts && profile.prompts.length > 0 && (
+              <div className="py-4 border-b border-gray-100">
+                <div className="flex gap-3 overflow-x-auto no-scrollbar snap-x snap-mandatory -mx-4 px-4 pb-1">
+                  {profile.prompts.map((p, i) => (
+                    <div
+                      key={i}
+                      className="flex-shrink-0 w-[82%] snap-center bg-gradient-to-br from-pink-50 to-rose-50 border border-pink-100 rounded-2xl p-4"
+                    >
+                      <p className="text-xs text-pink-400 font-medium mb-2 leading-snug">{p.question}</p>
+                      <p className="text-sm text-gray-800 leading-relaxed">{p.answer}</p>
+                    </div>
+                  ))}
+                </div>
+                {profile.prompts.length > 1 && (
+                  <div className="flex justify-center gap-1.5 mt-2.5">
+                    {profile.prompts.map((_, i) => (
+                      <div key={i} className="w-1.5 h-1.5 rounded-full bg-pink-200" />
+                    ))}
+                  </div>
+                )}
               </div>
             )}
 
             {/* Detail rows */}
             <div className="py-2">
+              <InfoRow icon={<User className="w-4 h-4 text-pink-500" />} label="Geschlecht">
+                <Badge label={profile.gender} color="pink" />
+              </InfoRow>
               <InfoRow
-                icon={profile.dailyRhythm === 'early-bird'
-                  ? <Sun className="w-4 h-4 text-amber-500" />
-                  : profile.dailyRhythm === 'night-owl'
-                  ? <Moon className="w-4 h-4 text-indigo-500" />
-                  : <Minus className="w-4 h-4 text-gray-400" />}
+                icon={<RhythmIcon rhythm={profile.dailyRhythm} />}
                 label="Tagesrhythmus"
               >
-                <Badge
-                  label={profile.dailyRhythm === 'early-bird' ? 'Frühaufsteher' : profile.dailyRhythm === 'night-owl' ? 'Nachtmensch' : 'Flexibel'}
-                  color={profile.dailyRhythm === 'early-bird' ? 'amber' : profile.dailyRhythm === 'night-owl' ? 'purple' : 'gray'}
-                />
+                <RhythmLabel rhythm={profile.dailyRhythm} />
               </InfoRow>
               <InfoRow
                 icon={profile.smoker ? <Cigarette className="w-4 h-4 text-amber-500" /> : <CigaretteOff className="w-4 h-4 text-gray-400" />}

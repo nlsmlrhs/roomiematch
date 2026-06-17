@@ -1,3 +1,5 @@
+import { useState, useEffect } from 'react'
+import { AnimatePresence } from 'framer-motion'
 import { AppProvider, useApp } from './context/AppContext'
 import { SwipeView } from './views/SwipeView'
 import { MatchView } from './views/MatchView'
@@ -5,6 +7,7 @@ import { ProfileSetup } from './views/ProfileSetup'
 import { MyListingsView } from './views/MyListingsView'
 import { BottomNav } from './components/BottomNav'
 import { ProfileDetail } from './components/ProfileDetail'
+import { SplashScreen } from './components/SplashScreen'
 
 function AppShell() {
   const { view } = useApp()
@@ -41,8 +44,18 @@ function AppShell() {
 }
 
 export default function App() {
+  const [showSplash, setShowSplash] = useState(true)
+
+  useEffect(() => {
+    const t = setTimeout(() => setShowSplash(false), 1800)
+    return () => clearTimeout(t)
+  }, [])
+
   return (
     <AppProvider>
+      <AnimatePresence>
+        {showSplash && <SplashScreen key="splash" />}
+      </AnimatePresence>
       <AppShell />
     </AppProvider>
   )
