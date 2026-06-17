@@ -2,42 +2,57 @@ import { useState } from 'react'
 import { AnimatePresence, motion } from 'framer-motion'
 import { SwipeCard } from '../components/SwipeCard'
 import { useApp } from '../context/AppContext'
-import { Heart, RefreshCw } from 'lucide-react'
+import { Heart, RefreshCw, X } from 'lucide-react'
 
 export function SwipeView() {
   const { queue, swipe } = useApp()
   const [matchFlash, setMatchFlash] = useState(false)
 
   function handleSwipe(dir: 'left' | 'right') {
-    swipe(dir)
-    if (dir === 'right') {
-      setTimeout(() => {
-        setMatchFlash(true)
-        setTimeout(() => setMatchFlash(false), 2000)
-      }, 100)
+    const matched = swipe(dir)
+    if (matched) {
+      setMatchFlash(true)
+      setTimeout(() => setMatchFlash(false), 2000)
     }
   }
 
-  // Visible stack: top 2 cards
   const visible = queue.slice(0, 2)
 
   return (
-    <div className="relative flex-1 flex flex-col items-center justify-center overflow-hidden px-4 pt-4 pb-0">
-      {/* Card stack */}
+    <div className="relative flex-1 flex flex-col items-center overflow-hidden px-4 pt-4">
       {visible.length > 0 ? (
-        <div className="relative w-full max-w-sm" style={{ height: 'calc(100vh - 14rem)' }}>
-          <AnimatePresence>
-            {[...visible].reverse().map((profile, i) => (
-              <SwipeCard
-                key={profile.id}
-                profile={profile}
-                onSwipe={handleSwipe}
-                zIndex={i}
-                isTop={i === visible.length - 1}
-              />
-            ))}
-          </AnimatePresence>
-        </div>
+        <>
+          {/* Card stack */}
+          <div className="relative w-full max-w-sm flex-1">
+            <AnimatePresence>
+              {[...visible].reverse().map((profile, i) => (
+                <SwipeCard
+                  key={profile.id}
+                  profile={profile}
+                  onSwipe={handleSwipe}
+                  zIndex={i}
+                  isTop={i === visible.length - 1}
+                />
+              ))}
+            </AnimatePresence>
+          </div>
+
+          {/* Action buttons — below the card, never overlapping */}
+          <div className="flex-shrink-0 flex justify-center gap-10 py-4">
+            <button
+              onClick={() => handleSwipe('left')}
+              className="w-16 h-16 rounded-full bg-white shadow-lg border border-rose-100 flex items-center justify-center active:scale-90 transition-transform"
+            >
+              <X className="w-8 h-8 text-rose-400" />
+            </button>
+            <button
+              onClick={() => handleSwipe('right')}
+              className="w-16 h-16 rounded-full bg-gradient-to-br from-pink-500 to-rose-500 shadow-lg flex items-center justify-center active:scale-90 transition-transform"
+            >
+              <Heart className="w-8 h-8 text-white fill-white" />
+            </button>
+          </div>
+        </>
       ) : (
         <EmptyState />
       )}
@@ -67,9 +82,9 @@ export function SwipeView() {
 
 function EmptyState() {
   return (
-    <div className="flex flex-col items-center gap-4 text-center px-8">
-      <div className="w-20 h-20 bg-gray-100 rounded-full flex items-center justify-center">
-        <RefreshCw className="w-9 h-9 text-gray-400" />
+    <div className="flex-1 flex flex-col items-center gap-4 text-center px-8 justify-center">
+      <div className="w-20 h-20 bg-pink-50 rounded-full flex items-center justify-center">
+        <RefreshCw className="w-9 h-9 text-pink-300" />
       </div>
       <h3 className="text-xl font-semibold text-gray-700">Keine Profile mehr</h3>
       <p className="text-gray-400 text-sm">Du hast alle verfügbaren Profile gesehen. Schau später nochmal rein!</p>

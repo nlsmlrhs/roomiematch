@@ -8,14 +8,14 @@ function AppShell() {
   const { view } = useApp()
 
   return (
-    <div className="h-full flex flex-col max-w-md mx-auto bg-white shadow-2xl relative overflow-hidden">
+    <div className="h-full flex flex-col max-w-md mx-auto bg-gradient-to-b from-pink-50/40 to-white shadow-2xl relative overflow-hidden">
       {/* Top bar */}
-      <header className="flex-shrink-0 px-4 pt-10 pb-3 bg-white border-b border-gray-50">
+      <header className="flex-shrink-0 px-4 pt-10 pb-3 bg-white/80 backdrop-blur border-b border-pink-100/60">
         <div className="flex items-center justify-between">
           <h1 className="text-xl font-bold bg-gradient-to-r from-pink-500 to-rose-500 bg-clip-text text-transparent">
-            RoomieMatch
+            Wohni
           </h1>
-          <span className="text-xs bg-pink-50 text-pink-500 px-2 py-1 rounded-full font-medium">
+          <span className="text-xs bg-gradient-to-r from-pink-500 to-rose-500 text-white px-3 py-1 rounded-full font-medium shadow-sm">
             {view === 'swipe' ? '🏠 Entdecken' : view === 'matches' ? '💬 Matches' : '👤 Profil'}
           </span>
         </div>

@@ -15,8 +15,8 @@ export function MatchView() {
 
   return (
     <div className="flex-1 overflow-y-auto no-scrollbar pb-4">
-      <div className="px-4 py-3">
-        <h2 className="text-xl font-bold text-gray-900">Deine Matches</h2>
+      <div className="px-4 py-4 bg-gradient-to-r from-pink-50 to-rose-50 border-b border-pink-100">
+        <h2 className="text-xl font-bold bg-gradient-to-r from-pink-500 to-rose-500 bg-clip-text text-transparent">Deine Matches</h2>
         <p className="text-sm text-gray-500">
           {matches.length} Match{matches.length !== 1 ? 'es' : ''}
         </p>
