@@ -50,6 +50,6 @@ export interface ChatMessage {
   sentAt: string
 }
 
-export type AppView = 'swipe' | 'matches' | 'profile-setup'
+export type AppView = 'swipe' | 'matches' | 'profile-setup' | 'my-listings'
 
 export type UserRole = 'seeker' | 'wg'

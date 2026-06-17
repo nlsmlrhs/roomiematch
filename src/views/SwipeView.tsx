@@ -1,12 +1,14 @@
 import { useState } from 'react'
 import { AnimatePresence, motion } from 'framer-motion'
 import { SwipeCard } from '../components/SwipeCard'
+import { ListView } from './ListView'
 import { useApp } from '../context/AppContext'
-import { Heart, RefreshCw, X } from 'lucide-react'
+import { Heart, RefreshCw, X, LayoutGrid, List } from 'lucide-react'
 
 export function SwipeView() {
-  const { queue, swipe } = useApp()
+  const { queue, swipe, userRole, setUserRole } = useApp()
   const [matchFlash, setMatchFlash] = useState(false)
+  const [viewMode, setViewMode] = useState<'card' | 'list'>('card')
 
   function handleSwipe(dir: 'left' | 'right') {
     const matched = swipe(dir)
@@ -19,8 +21,44 @@ export function SwipeView() {
   const visible = queue.slice(0, 2)
 
   return (
-    <div className="relative flex-1 flex flex-col items-center overflow-hidden px-4 pt-4">
-      {visible.length > 0 ? (
+    <div className="relative flex-1 flex flex-col items-center overflow-hidden px-4 pt-3">
+      {/* Role toggle */}
+      <div className="w-full max-w-sm mb-3 flex-shrink-0">
+        <div className="flex bg-gray-100 rounded-2xl p-1 gap-1">
+          <button
+            onClick={() => { setUserRole('seeker'); setViewMode('card') }}
+            className={`flex-1 py-2 rounded-xl text-sm font-semibold transition-all duration-200 ${userRole === 'seeker' ? 'bg-white shadow-sm text-pink-500' : 'text-gray-400'}`}
+          >
+            🏠 WGs finden
+          </button>
+          <button
+            onClick={() => { setUserRole('wg'); setViewMode('card') }}
+            className={`flex-1 py-2 rounded-xl text-sm font-semibold transition-all duration-200 ${userRole === 'wg' ? 'bg-white shadow-sm text-pink-500' : 'text-gray-400'}`}
+          >
+            👤 Suchende
+          </button>
+        </div>
+      </div>
+
+      {/* View mode toggle */}
+      <div className="w-full max-w-sm flex justify-end gap-1 mb-2 flex-shrink-0">
+        <button
+          onClick={() => setViewMode('card')}
+          className={`p-1.5 rounded-lg transition-colors ${viewMode === 'card' ? 'text-pink-500 bg-pink-50' : 'text-gray-300'}`}
+        >
+          <LayoutGrid className="w-5 h-5" />
+        </button>
+        <button
+          onClick={() => setViewMode('list')}
+          className={`p-1.5 rounded-lg transition-colors ${viewMode === 'list' ? 'text-pink-500 bg-pink-50' : 'text-gray-300'}`}
+        >
+          <List className="w-5 h-5" />
+        </button>
+      </div>
+
+      {viewMode === 'list' ? (
+        <ListView queue={queue} />
+      ) : visible.length > 0 ? (
         <>
           {/* Card stack */}
           <div className="relative w-full max-w-sm flex-1">
@@ -37,7 +75,7 @@ export function SwipeView() {
             </AnimatePresence>
           </div>
 
-          {/* Action buttons — below the card, never overlapping */}
+          {/* Action buttons */}
           <div className="flex-shrink-0 flex justify-center gap-10 py-4">
             <button
               onClick={() => handleSwipe('left')}

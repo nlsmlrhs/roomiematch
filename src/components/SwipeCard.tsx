@@ -2,9 +2,10 @@ import { useState } from 'react'
 import { motion, useMotionValue, useTransform, type PanInfo } from 'framer-motion'
 import {
   MapPin, Wifi, Euro, Calendar, Moon, Sun, Minus,
-  Languages, Briefcase, Tag, ChevronDown, ChevronUp, Users, Cigarette, CigaretteOff,
+  Languages, Briefcase, Tag, ChevronDown, ChevronUp, Users, Cigarette, CigaretteOff, Info,
 } from 'lucide-react'
 import type { Profile } from '../types'
+import { useApp } from '../context/AppContext'
 
 interface Props {
   profile: Profile
@@ -38,6 +39,7 @@ function RhythmIcon({ rhythm }: { rhythm: string }) {
 }
 
 export function SwipeCard({ profile, onSwipe, zIndex = 0, isTop = false }: Props) {
+  const { setDetailProfile } = useApp()
   const [photoIdx, setPhotoIdx] = useState(0)
   const [expanded, setExpanded] = useState(false)
   const x = useMotionValue(0)
@@ -57,10 +59,12 @@ export function SwipeCard({ profile, onSwipe, zIndex = 0, isTop = false }: Props
     profile.kind === 'seeker'
       ? [
           { label: `bis ${profile.budgetMax} €/Mo`, color: 'green' as const },
+          { label: `ab ${new Date(profile.movingDate).toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit', year: '2-digit' })}`, color: 'blue' as const },
           { label: profile.smoker ? 'Raucher 🚬' : 'Nichtraucher', color: 'gray' as const },
         ]
       : [
           { label: `${profile.rentMonthly} €/Mo`, color: 'green' as const },
+          { label: `ab ${new Date(profile.availableFrom).toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit', year: '2-digit' })}`, color: 'blue' as const },
           { label: `${profile.roommates} Mitbewohner`, color: 'purple' as const },
         ]
 
@@ -70,7 +74,7 @@ export function SwipeCard({ profile, onSwipe, zIndex = 0, isTop = false }: Props
       drag={isTop && !expanded ? 'x' : false}
       dragConstraints={{ left: 0, right: 0 }}
       onDragEnd={handleDragEnd}
-      className="absolute inset-0 select-none touch-none"
+      className={`absolute inset-0 select-none ${expanded ? '' : 'touch-none'}`}
       initial={{ scale: isTop ? 1 : 0.95, y: isTop ? 0 : 12 }}
       animate={{ scale: isTop ? 1 : 0.95, y: isTop ? 0 : 12 }}
       exit={{ x: 0, opacity: 0, scale: 0.8, transition: { duration: 0.25 } }}
@@ -115,6 +119,15 @@ export function SwipeCard({ profile, onSwipe, zIndex = 0, isTop = false }: Props
               </div>
             </>
           )}
+
+          {/* Info button */}
+          <button
+            className="absolute top-10 right-3 z-10 w-8 h-8 rounded-full bg-black/30 backdrop-blur-sm flex items-center justify-center active:bg-black/50 transition-colors"
+            onPointerDown={(e) => e.stopPropagation()}
+            onClick={(e) => { e.stopPropagation(); setDetailProfile(profile) }}
+          >
+            <Info className="w-4 h-4 text-white" />
+          </button>
 
           {/* Gradient overlay */}
           <div className="absolute bottom-0 left-0 right-0 h-52 bg-gradient-to-t from-black/80 to-transparent pointer-events-none" />
@@ -192,7 +205,7 @@ export function SwipeCard({ profile, onSwipe, zIndex = 0, isTop = false }: Props
           </button>
 
           {/* Scrollable profile details */}
-          <div className="flex-1 overflow-y-auto no-scrollbar px-4 pb-6 space-y-4">
+          {expanded && <div className="flex-1 overflow-y-auto no-scrollbar px-4 pb-6 space-y-4">
             {/* Quick stats */}
             <div className="flex flex-wrap gap-2">
               {profile.kind === 'seeker' ? (
@@ -285,7 +298,7 @@ export function SwipeCard({ profile, onSwipe, zIndex = 0, isTop = false }: Props
                 />
               </div>
             )}
-          </div>
+          </div>}
         </div>
       </div>
     </motion.div>

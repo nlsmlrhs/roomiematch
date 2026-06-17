@@ -4,7 +4,7 @@ import { mockSeekers, mockFlatshares } from '../data/mockData'
 
 interface AppContextValue {
   userRole: UserRole
-  setUserRole: (r: UserRole) => void
+  setUserRole: (role: UserRole) => void
   queue: Profile[]
   swipe: (direction: 'left' | 'right') => boolean
   matches: Match[]
@@ -13,22 +13,47 @@ interface AppContextValue {
   setView: (v: AppView) => void
   activeChatMatchId: string | null
   setActiveChatMatchId: (id: string | null) => void
+  myListings: Flatshare[]
+  addListing: (data: Omit<Flatshare, 'id' | 'kind'>) => void
+  updateListing: (listing: Flatshare) => void
+  deleteListing: (id: string) => void
+  detailProfile: Profile | null
+  setDetailProfile: (p: Profile | null) => void
 }
 
 const AppContext = createContext<AppContextValue | null>(null)
 
 export function AppProvider({ children }: { children: ReactNode }) {
-  const [userRole, setUserRole] = useState<UserRole>('seeker')
+  const [userRole, setUserRoleState] = useState<UserRole>('seeker')
   const [view, setView] = useState<AppView>('swipe')
   const [activeChatMatchId, setActiveChatMatchId] = useState<string | null>(null)
   const [matches, setMatches] = useState<Match[]>([])
+  const [myListings, setMyListings] = useState<Flatshare[]>([])
+  const [dismissed, setDismissed] = useState<Set<string>>(new Set())
+  const [detailProfile, setDetailProfile] = useState<Profile | null>(null)
+
+  const setUserRole = useCallback((role: UserRole) => {
+    setUserRoleState(role)
+    setDismissed(new Set())
+  }, [])
+
+  const addListing = useCallback((data: Omit<Flatshare, 'id' | 'kind'>) => {
+    const listing: Flatshare = { kind: 'flatshare', id: `listing-${Date.now()}`, ...data }
+    setMyListings((prev) => [listing, ...prev])
+  }, [])
+
+  const updateListing = useCallback((listing: Flatshare) => {
+    setMyListings((prev) => prev.map((l) => (l.id === listing.id ? listing : l)))
+  }, [])
+
+  const deleteListing = useCallback((id: string) => {
+    setMyListings((prev) => prev.filter((l) => l.id !== id))
+  }, [])
 
   const baseQueue: Profile[] =
     userRole === 'seeker'
       ? [...mockFlatshares]
       : [...mockSeekers]
-
-  const [dismissed, setDismissed] = useState<Set<string>>(new Set())
   const queue = baseQueue.filter((p) => !dismissed.has(p.id))
 
   const swipe = useCallback(
@@ -87,6 +112,12 @@ export function AppProvider({ children }: { children: ReactNode }) {
         setView,
         activeChatMatchId,
         setActiveChatMatchId,
+        myListings,
+        addListing,
+        updateListing,
+        deleteListing,
+        detailProfile,
+        setDetailProfile,
       }}
     >
       {children}

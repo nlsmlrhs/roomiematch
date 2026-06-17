@@ -1,10 +1,11 @@
-import { Home, Heart, User } from 'lucide-react'
+import { Home, Heart, User, Building2 } from 'lucide-react'
 import { useApp } from '../context/AppContext'
 import type { AppView } from '../types'
 
 const tabs: { view: AppView; icon: typeof Home; label: string }[] = [
   { view: 'swipe', icon: Home, label: 'Entdecken' },
   { view: 'matches', icon: Heart, label: 'Matches' },
+  { view: 'my-listings', icon: Building2, label: 'Inserate' },
   { view: 'profile-setup', icon: User, label: 'Profil' },
 ]
 

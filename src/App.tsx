@@ -2,7 +2,9 @@ import { AppProvider, useApp } from './context/AppContext'
 import { SwipeView } from './views/SwipeView'
 import { MatchView } from './views/MatchView'
 import { ProfileSetup } from './views/ProfileSetup'
+import { MyListingsView } from './views/MyListingsView'
 import { BottomNav } from './components/BottomNav'
+import { ProfileDetail } from './components/ProfileDetail'
 
 function AppShell() {
   const { view } = useApp()
@@ -16,7 +18,7 @@ function AppShell() {
             Wohni
           </h1>
           <span className="text-xs bg-gradient-to-r from-pink-500 to-rose-500 text-white px-3 py-1 rounded-full font-medium shadow-sm">
-            {view === 'swipe' ? '🏠 Entdecken' : view === 'matches' ? '💬 Matches' : '👤 Profil'}
+            {view === 'swipe' ? '🏠 Entdecken' : view === 'matches' ? '💬 Matches' : view === 'my-listings' ? '🏢 Inserate' : '👤 Profil'}
           </span>
         </div>
       </header>
@@ -25,11 +27,15 @@ function AppShell() {
       <main className="flex-1 overflow-hidden flex flex-col">
         {view === 'swipe' && <SwipeView />}
         {view === 'matches' && <MatchView />}
+        {view === 'my-listings' && <MyListingsView />}
         {view === 'profile-setup' && <ProfileSetup />}
       </main>
 
       {/* Bottom nav */}
       <BottomNav />
+
+      {/* Detail overlay — covers everything incl. nav */}
+      <ProfileDetail />
     </div>
   )
 }

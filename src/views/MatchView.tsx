@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { ArrowLeft, Send, MessageCircle } from 'lucide-react'
+import { ArrowLeft, Send, MessageCircle, Info } from 'lucide-react'
 import { useApp } from '../context/AppContext'
 import type { Match } from '../types'
 
@@ -79,6 +79,7 @@ function ChatScreen({
   onBack: () => void
   sendMessage: (matchId: string, text: string) => void
 }) {
+  const { setDetailProfile } = useApp()
   const [input, setInput] = useState('')
   const avatar = match.flatshare.images[0] ?? match.seeker.photos[0]
 
@@ -96,17 +97,23 @@ function ChatScreen({
         <button onClick={onBack} className="p-1 -ml-1 rounded-full active:bg-gray-100">
           <ArrowLeft className="w-5 h-5 text-gray-600" />
         </button>
-        <div className="w-9 h-9 rounded-xl overflow-hidden bg-pink-100">
-          {avatar ? (
-            <img src={avatar} alt="" className="w-full h-full object-cover" />
-          ) : (
-            <div className="w-full h-full flex items-center justify-center text-lg">🏠</div>
-          )}
-        </div>
-        <div className="flex-1 min-w-0">
-          <p className="font-semibold text-sm text-gray-900 truncate">{match.flatshare.title}</p>
-          <p className="text-xs text-green-500">Online</p>
-        </div>
+        <button
+          onClick={() => setDetailProfile(match.flatshare)}
+          className="flex items-center gap-2 flex-1 min-w-0 text-left active:opacity-70 transition-opacity"
+        >
+          <div className="w-9 h-9 rounded-xl overflow-hidden bg-pink-100 flex-shrink-0">
+            {avatar ? (
+              <img src={avatar} alt="" className="w-full h-full object-cover" />
+            ) : (
+              <div className="w-full h-full flex items-center justify-center text-lg">🏠</div>
+            )}
+          </div>
+          <div className="flex-1 min-w-0">
+            <p className="font-semibold text-sm text-gray-900 truncate">{match.flatshare.title}</p>
+            <p className="text-xs text-green-500">Online</p>
+          </div>
+          <Info className="w-4 h-4 text-gray-300 flex-shrink-0" />
+        </button>
       </div>
 
       {/* Messages */}
