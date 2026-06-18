@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion'
 import {
   ArrowLeft, MapPin, Users, ExternalLink,
   Languages, Tag, Sun, Moon, Minus, Cigarette, CigaretteOff, ChevronLeft, ChevronRight,
-  User, CalendarRange, MessageCircle, Heart, X,
+  User, CalendarRange, MessageCircle, Heart, X, Send,
   Bath, Shirt, Utensils, Trees, Car, Bike, Archive, ArrowUpDown, Home, Dog, Wind,
   type LucideIcon,
 } from 'lucide-react'
@@ -89,7 +89,6 @@ function GenderBadges({ genders }: { genders: string[] }) {
   )
 }
 
-// Module-level cache: address string → coords or null (null = not found)
 const coordsCache = new Map<string, [number, number] | null>()
 
 function AddressMap({ address }: { address: string }) {
@@ -104,13 +103,11 @@ function AddressMap({ address }: { address: string }) {
       else setFailed(true)
       return
     }
-
     setCoords(undefined)
     setFailed(false)
     abortRef.current?.abort()
     const controller = new AbortController()
     abortRef.current = controller
-
     fetch(
       `https://nominatim.openstreetmap.org/search?format=json&limit=1&countrycodes=de&q=${encodeURIComponent(address)}`,
       { headers: { Accept: 'application/json' }, signal: controller.signal },
@@ -126,10 +123,7 @@ function AddressMap({ address }: { address: string }) {
           setFailed(true)
         }
       })
-      .catch((e) => {
-        if (e.name !== 'AbortError') setFailed(true)
-      })
-
+      .catch((e) => { if (e.name !== 'AbortError') setFailed(true) })
     return () => controller.abort()
   }, [address])
 
@@ -139,22 +133,14 @@ function AddressMap({ address }: { address: string }) {
     <div className="py-4 border-b border-gray-100">
       <div className="flex items-center justify-between mb-2">
         <SectionTitle>Lage</SectionTitle>
-        <a
-          href={mapsUrl}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="flex items-center gap-1 text-xs text-pink-500 font-medium"
-        >
+        <a href={mapsUrl} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1 text-xs text-pink-500 font-medium">
           In Maps öffnen <ExternalLink className="w-3 h-3" />
         </a>
       </div>
-
       {failed ? (
         <div className="h-24 bg-gray-50 rounded-2xl flex flex-col items-center justify-center gap-1 border border-gray-100">
           <p className="text-xs text-gray-400">Adresse konnte nicht auf der Karte gefunden werden.</p>
-          <a href={mapsUrl} target="_blank" rel="noopener noreferrer" className="text-xs text-pink-500 font-medium">
-            In Google Maps öffnen →
-          </a>
+          <a href={mapsUrl} target="_blank" rel="noopener noreferrer" className="text-xs text-pink-500 font-medium">In Google Maps öffnen →</a>
         </div>
       ) : !coords ? (
         <div className="h-44 bg-gray-100 rounded-2xl flex items-center justify-center">
@@ -173,15 +159,110 @@ function AddressMap({ address }: { address: string }) {
   )
 }
 
+// ─── Mini Chat Panel ──────────────────────────────────────────────────────────
+
+function MiniChat({ profile, onClose }: { profile: Profile; onClose: () => void }) {
+  const { directConversations, sendDirectMessage } = useApp()
+  const [input, setInput] = useState('')
+  const messagesEndRef = useRef<HTMLDivElement>(null)
+
+  const conv = directConversations.find((c) => c.profileId === profile.id)
+  const messages = conv?.messages ?? []
+  const name = profile.kind === 'flatshare' ? profile.title : profile.firstName
+  const photo = profile.kind === 'flatshare' ? (profile.images[0] ?? '') : (profile.photos[0] ?? '')
+
+  useEffect(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
+  }, [messages.length])
+
+  function handleSend() {
+    const t = input.trim()
+    if (!t) return
+    sendDirectMessage(profile, t)
+    setInput('')
+  }
+
+  return (
+    <>
+      {/* Drag handle + header */}
+      <div className="flex-shrink-0">
+        <div className="flex justify-center pt-2 pb-1">
+          <div className="w-10 h-1 bg-gray-200 rounded-full" />
+        </div>
+        <div className="flex items-center gap-2.5 px-4 py-2 border-b border-gray-100">
+          <div className="w-9 h-9 rounded-xl overflow-hidden bg-gradient-to-br from-pink-200 to-purple-200 flex-shrink-0">
+            {photo
+              ? <img src={photo} alt="" className="w-full h-full object-cover" />
+              : <div className="w-full h-full flex items-center justify-center text-lg">{profile.kind === 'flatshare' ? '🏠' : '👤'}</div>
+            }
+          </div>
+          <div className="flex-1 min-w-0">
+            <p className="font-semibold text-sm text-gray-900 truncate">{name}</p>
+            <p className="text-xs text-green-500">Online</p>
+          </div>
+          <button onClick={onClose} className="p-1.5 rounded-full active:bg-gray-100 flex-shrink-0">
+            <X className="w-4 h-4 text-gray-400" />
+          </button>
+        </div>
+      </div>
+
+      {/* Messages */}
+      <div className="flex-1 overflow-y-auto no-scrollbar px-4 py-3 space-y-2.5">
+        {messages.length === 0 && (
+          <p className="text-center text-xs text-gray-400 py-6">Schreib eine erste Nachricht ✉️</p>
+        )}
+        <AnimatePresence initial={false}>
+          {messages.map((msg) => (
+            <motion.div
+              key={msg.id}
+              initial={{ opacity: 0, y: 6 }}
+              animate={{ opacity: 1, y: 0 }}
+              className={`flex ${msg.senderId === 'me' ? 'justify-end' : 'justify-start'}`}
+            >
+              <div className={`max-w-[78%] rounded-2xl px-3.5 py-2 text-sm leading-relaxed ${
+                msg.senderId === 'me'
+                  ? 'bg-gradient-to-br from-pink-500 to-rose-500 text-white rounded-br-sm'
+                  : 'bg-gray-100 text-gray-800 rounded-bl-sm'
+              }`}>
+                {msg.text}
+              </div>
+            </motion.div>
+          ))}
+        </AnimatePresence>
+        <div ref={messagesEndRef} />
+      </div>
+
+      {/* Input */}
+      <div className="flex-shrink-0 flex items-center gap-2 px-4 py-3 border-t border-gray-100 bg-white">
+        <input
+          type="text"
+          value={input}
+          autoFocus
+          onChange={(e) => setInput(e.target.value)}
+          onKeyDown={(e) => e.key === 'Enter' && handleSend()}
+          placeholder="Nachricht schreiben…"
+          className="flex-1 bg-gray-100 rounded-2xl px-4 py-2.5 text-sm outline-none focus:ring-2 focus:ring-pink-300 transition"
+        />
+        <button
+          onClick={handleSend}
+          disabled={!input.trim()}
+          className="w-10 h-10 rounded-full bg-gradient-to-br from-pink-500 to-rose-500 flex items-center justify-center disabled:opacity-40 active:scale-90 transition-transform flex-shrink-0"
+        >
+          <Send className="w-4 h-4 text-white" />
+        </button>
+      </div>
+    </>
+  )
+}
+
+// ─── Detail Content ───────────────────────────────────────────────────────────
+
 function DetailContent({ profile, onClose }: { profile: Profile; onClose: () => void }) {
-  const { matches, setActiveChatMatchId, setView, setDetailProfile, userRole, myProfile, myListings, swipedRight, swipedLeft, swipeProfile } = useApp()
+  const { setView, setDetailProfile, userRole, myProfile, myListings, swipedRight, swipedLeft, swipeProfile, setMyAreaTab } = useApp()
   const images = profile.kind === 'seeker' ? profile.photos : profile.images
   const [photoIdx, setPhotoIdx] = useState(0)
   const [justMatched, setJustMatched] = useState(false)
-
-  const existingMatch = matches.find(
-    (m) => m.flatshare.id === profile.id || m.seeker.id === profile.id,
-  )
+  const [showChat, setShowChat] = useState(false)
 
   const swipeStatus: 'new' | 'liked' | 'disliked' =
     swipedRight.has(profile.id) ? 'liked' :
@@ -197,13 +278,6 @@ function DetailContent({ profile, onClose }: { profile: Profile; onClose: () => 
   const scorePlaceholder =
     (profile.kind === 'flatshare' && userRole === 'seeker' && !myProfile) ||
     (profile.kind === 'seeker' && userRole === 'wg' && myListings.length === 0)
-
-  function openChat() {
-    if (!existingMatch) return
-    setDetailProfile(null)
-    setActiveChatMatchId(existingMatch.id)
-    setView('matches')
-  }
 
   function handleLike() {
     const matched = swipeProfile(profile.id, 'right')
@@ -221,7 +295,7 @@ function DetailContent({ profile, onClose }: { profile: Profile; onClose: () => 
   }
 
   return (
-    <div className="flex flex-col h-full">
+    <div className="flex flex-col h-full relative">
       {/* Photo area */}
       <div className="relative h-72 flex-shrink-0 bg-gradient-to-br from-pink-200 to-purple-200">
         {images.length > 0 ? (
@@ -231,7 +305,6 @@ function DetailContent({ profile, onClose }: { profile: Profile; onClose: () => 
             {profile.kind === 'flatshare' ? '🏠' : '👤'}
           </div>
         )}
-
         <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-black/20 pointer-events-none" />
 
         <button
@@ -242,22 +315,21 @@ function DetailContent({ profile, onClose }: { profile: Profile; onClose: () => 
           <ArrowLeft className="w-5 h-5 text-white" />
         </button>
 
+        {/* Chat icon button top-right */}
+        <button
+          onClick={() => setShowChat(true)}
+          aria-label="Nachricht schreiben"
+          className="absolute top-10 right-4 z-10 w-9 h-9 rounded-full bg-black/30 backdrop-blur-sm flex items-center justify-center active:bg-black/50 transition-colors"
+        >
+          <MessageCircle className="w-5 h-5 text-white" />
+        </button>
+
         {images.length > 1 && (
           <>
-            <button
-              onClick={() => setPhotoIdx((i) => Math.max(0, i - 1))}
-              className="absolute left-2 top-1/2 -translate-y-1/2 z-10 w-8 h-8 rounded-full bg-black/30 backdrop-blur-sm flex items-center justify-center disabled:opacity-30"
-              disabled={photoIdx === 0}
-              aria-label="Vorheriges Foto"
-            >
+            <button onClick={() => setPhotoIdx((i) => Math.max(0, i - 1))} className="absolute left-2 top-1/2 -translate-y-1/2 z-10 w-8 h-8 rounded-full bg-black/30 backdrop-blur-sm flex items-center justify-center disabled:opacity-30" disabled={photoIdx === 0} aria-label="Vorheriges Foto">
               <ChevronLeft className="w-4 h-4 text-white" />
             </button>
-            <button
-              onClick={() => setPhotoIdx((i) => Math.min(images.length - 1, i + 1))}
-              className="absolute right-2 top-1/2 -translate-y-1/2 z-10 w-8 h-8 rounded-full bg-black/30 backdrop-blur-sm flex items-center justify-center disabled:opacity-30"
-              disabled={photoIdx === images.length - 1}
-              aria-label="Nächstes Foto"
-            >
+            <button onClick={() => setPhotoIdx((i) => Math.min(images.length - 1, i + 1))} className="absolute right-2 top-1/2 -translate-y-1/2 z-10 w-8 h-8 rounded-full bg-black/30 backdrop-blur-sm flex items-center justify-center disabled:opacity-30" disabled={photoIdx === images.length - 1} aria-label="Nächstes Foto">
               <ChevronRight className="w-4 h-4 text-white" />
             </button>
             <div className="absolute bottom-4 left-0 right-0 flex justify-center gap-1.5 pointer-events-none">
@@ -272,15 +344,11 @@ function DetailContent({ profile, onClose }: { profile: Profile; onClose: () => 
           {profile.kind === 'flatshare' ? (
             <>
               <h2 className="text-2xl font-bold text-white leading-tight drop-shadow-sm">{profile.title}</h2>
-              <p className="text-sm text-white/80 flex items-center gap-1 mt-0.5">
-                <MapPin className="w-3.5 h-3.5" /> {profile.address}
-              </p>
+              <p className="text-sm text-white/80 flex items-center gap-1 mt-0.5"><MapPin className="w-3.5 h-3.5" /> {profile.address}</p>
             </>
           ) : (
             <>
-              <h2 className="text-2xl font-bold text-white leading-tight drop-shadow-sm">
-                {profile.firstName}, {profile.age}
-              </h2>
+              <h2 className="text-2xl font-bold text-white leading-tight drop-shadow-sm">{profile.firstName}, {profile.age}</h2>
               <p className="text-sm text-white/80 mt-0.5">{profile.occupation}</p>
             </>
           )}
@@ -291,7 +359,6 @@ function DetailContent({ profile, onClose }: { profile: Profile; onClose: () => 
       <div className="flex-1 overflow-y-auto no-scrollbar px-4 pb-8">
         {profile.kind === 'flatshare' ? (
           <>
-            {/* Compatibility score */}
             {score !== null ? (
               <div className={`flex items-center justify-between px-3 py-3 rounded-2xl mt-3 ${scoreColor(score)}`}>
                 <div>
@@ -301,10 +368,7 @@ function DetailContent({ profile, onClose }: { profile: Profile; onClose: () => 
                 <p className="text-4xl font-black">{score}%</p>
               </div>
             ) : scorePlaceholder ? (
-              <button
-                onClick={() => { setView('profile-setup'); setDetailProfile(null) }}
-                className="flex items-center justify-between px-3 py-3 rounded-2xl mt-3 bg-gray-50 border border-dashed border-gray-200 w-full text-left"
-              >
+              <button onClick={() => { setMyAreaTab('profile'); setView('my-area'); setDetailProfile(null) }} className="flex items-center justify-between px-3 py-3 rounded-2xl mt-3 bg-gray-50 border border-dashed border-gray-200 w-full text-left">
                 <div>
                   <p className="text-xs text-gray-400 mb-0.5">Kompatibilität</p>
                   <p className="text-sm font-medium text-pink-400">Profil anlegen →</p>
@@ -313,29 +377,13 @@ function DetailContent({ profile, onClose }: { profile: Profile; onClose: () => 
               </button>
             ) : null}
 
-            {/* Key stats */}
             <div className="grid grid-cols-2 gap-3 py-4 border-b border-gray-100">
-              <div className="bg-green-50 rounded-2xl p-3">
-                <p className="text-xs text-gray-400 mb-0.5">Miete</p>
-                <p className="text-base font-bold text-green-700">{profile.rentMonthly} €<span className="text-sm font-normal">/Mo</span></p>
-              </div>
-              <div className="bg-indigo-50 rounded-2xl p-3">
-                <p className="text-xs text-gray-400 mb-0.5">Frei ab</p>
-                <p className="text-base font-bold text-indigo-700">
-                  {new Date(profile.availableFrom).toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit', year: '2-digit' })}
-                </p>
-              </div>
-              <div className="bg-purple-50 rounded-2xl p-3">
-                <p className="text-xs text-gray-400 mb-0.5">Mitbewohner</p>
-                <p className="text-base font-bold text-purple-700">{profile.roommates} Person{profile.roommates !== 1 ? 'en' : ''}</p>
-              </div>
-              <div className="bg-blue-50 rounded-2xl p-3">
-                <p className="text-xs text-gray-400 mb-0.5">Internet</p>
-                <p className="text-base font-bold text-blue-700">{profile.internetSpeed}</p>
-              </div>
+              <div className="bg-green-50 rounded-2xl p-3"><p className="text-xs text-gray-400 mb-0.5">Miete</p><p className="text-base font-bold text-green-700">{profile.rentMonthly} €<span className="text-sm font-normal">/Mo</span></p></div>
+              <div className="bg-indigo-50 rounded-2xl p-3"><p className="text-xs text-gray-400 mb-0.5">Frei ab</p><p className="text-base font-bold text-indigo-700">{new Date(profile.availableFrom).toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit', year: '2-digit' })}</p></div>
+              <div className="bg-purple-50 rounded-2xl p-3"><p className="text-xs text-gray-400 mb-0.5">Mitbewohner</p><p className="text-base font-bold text-purple-700">{profile.roommates} Person{profile.roommates !== 1 ? 'en' : ''}</p></div>
+              <div className="bg-blue-50 rounded-2xl p-3"><p className="text-xs text-gray-400 mb-0.5">Internet</p><p className="text-base font-bold text-blue-700">{profile.internetSpeed}</p></div>
             </div>
 
-            {/* Description */}
             {profile.description && (
               <div className="py-4 border-b border-gray-100">
                 <SectionTitle>Über die WG</SectionTitle>
@@ -343,52 +391,50 @@ function DetailContent({ profile, onClose }: { profile: Profile; onClose: () => 
               </div>
             )}
 
-            {/* WG & Mitbewohner */}
+            {profile.roommateProfiles && profile.roommateProfiles.length > 0 && (
+              <div className="py-4 border-b border-gray-100">
+                <SectionTitle>Deine zukünftigen Mitbewohner</SectionTitle>
+                <div className="flex gap-3 overflow-x-auto no-scrollbar snap-x snap-mandatory -mx-4 px-4 pb-2 mt-3">
+                  {profile.roommateProfiles.map((r, i) => (
+                    <div key={i} className="flex-shrink-0 w-48 snap-center bg-gray-50 rounded-2xl p-3 border border-gray-100">
+                      <img src={r.photo} alt={r.name} className="w-full h-28 object-cover rounded-xl mb-2" />
+                      <p className="font-semibold text-sm text-gray-900">{r.name}, {r.age}</p>
+                      <p className="text-xs text-gray-400 mb-1">{r.occupation}</p>
+                      <p className="text-xs text-gray-600 leading-relaxed line-clamp-3">{r.bio}</p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
             <div className="py-2 border-b border-gray-100">
               <SectionTitle>WG & Mitbewohner</SectionTitle>
-              <InfoRow icon={<RhythmIcon rhythm={profile.wgRhythm} />} label="Tagesrhythmus">
-                <RhythmLabel rhythm={profile.wgRhythm} />
-              </InfoRow>
-              <InfoRow
-                icon={profile.smokingAllowed
-                  ? <Cigarette className="w-4 h-4 text-amber-500" />
-                  : <CigaretteOff className="w-4 h-4 text-gray-400" />}
-                label="Rauchen"
-              >
+              <InfoRow icon={<RhythmIcon rhythm={profile.wgRhythm} />} label="Tagesrhythmus"><RhythmLabel rhythm={profile.wgRhythm} /></InfoRow>
+              <InfoRow icon={profile.smokingAllowed ? <Cigarette className="w-4 h-4 text-amber-500" /> : <CigaretteOff className="w-4 h-4 text-gray-400" />} label="Rauchen">
                 <Badge label={profile.smokingAllowed ? 'Erlaubt' : 'Nicht erlaubt'} color={profile.smokingAllowed ? 'amber' : 'gray'} />
               </InfoRow>
               {profile.roommateLanguages.length > 0 && (
                 <InfoRow icon={<Languages className="w-4 h-4 text-blue-500" />} label="Sprachen in der WG">
-                  <div className="flex flex-wrap gap-1">
-                    {profile.roommateLanguages.map((l) => <Badge key={l} label={l} color="blue" />)}
-                  </div>
+                  <div className="flex flex-wrap gap-1">{profile.roommateLanguages.map((l) => <Badge key={l} label={l} color="blue" />)}</div>
                 </InfoRow>
               )}
               {profile.roommateGenders.length > 0 && (
-                <InfoRow icon={<Users className="w-4 h-4 text-purple-500" />} label="Mitbewohner:innen">
-                  <GenderBadges genders={profile.roommateGenders} />
-                </InfoRow>
+                <InfoRow icon={<Users className="w-4 h-4 text-purple-500" />} label="Mitbewohner:innen"><GenderBadges genders={profile.roommateGenders} /></InfoRow>
               )}
             </div>
 
-            {/* Wen suchen wir? */}
             <div className="py-2 border-b border-gray-100">
               <SectionTitle>Wen suchen wir?</SectionTitle>
               <InfoRow icon={<User className="w-4 h-4 text-pink-500" />} label="Geschlecht">
-                <Badge
-                  label={profile.preferredGender === 'alle' ? 'Alle willkommen' : profile.preferredGender}
-                  color={profile.preferredGender === 'alle' ? 'green' : 'pink'}
-                />
+                <Badge label={profile.preferredGender === 'alle' ? 'Alle willkommen' : profile.preferredGender} color={profile.preferredGender === 'alle' ? 'green' : 'pink'} />
               </InfoRow>
               <InfoRow icon={<CalendarRange className="w-4 h-4 text-indigo-500" />} label="Alter">
                 <span className="text-sm text-gray-700">{profile.preferredAgeMin} – {profile.preferredAgeMax} Jahre</span>
               </InfoRow>
             </div>
 
-            {/* Map */}
             <AddressMap address={profile.address} />
 
-            {/* Amenities */}
             {profile.amenities.length > 0 && (
               <div className="py-4 border-b border-gray-100">
                 <SectionTitle>Ausstattung</SectionTitle>
@@ -407,19 +453,15 @@ function DetailContent({ profile, onClose }: { profile: Profile; onClose: () => 
               </div>
             )}
 
-            {/* Tags */}
             {profile.tags.length > 0 && (
               <div className="py-4">
                 <SectionTitle>Vibe & Extras</SectionTitle>
-                <div className="flex flex-wrap gap-1.5">
-                  {profile.tags.map((t) => <Badge key={t} label={t} color="pink" />)}
-                </div>
+                <div className="flex flex-wrap gap-1.5">{profile.tags.map((t) => <Badge key={t} label={t} color="pink" />)}</div>
               </div>
             )}
           </>
         ) : (
           <>
-            {/* Compatibility score — WG mode */}
             {score !== null ? (
               <div className={`flex items-center justify-between px-3 py-3 rounded-2xl mt-3 ${scoreColor(score)}`}>
                 <div>
@@ -429,10 +471,7 @@ function DetailContent({ profile, onClose }: { profile: Profile; onClose: () => 
                 <p className="text-4xl font-black">{score}%</p>
               </div>
             ) : scorePlaceholder ? (
-              <button
-                onClick={() => { setView('my-listings'); setDetailProfile(null) }}
-                className="flex items-center justify-between px-3 py-3 rounded-2xl mt-3 bg-gray-50 border border-dashed border-gray-200 w-full text-left"
-              >
+              <button onClick={() => { setView('listings'); setDetailProfile(null) }} className="flex items-center justify-between px-3 py-3 rounded-2xl mt-3 bg-gray-50 border border-dashed border-gray-200 w-full text-left">
                 <div>
                   <p className="text-xs text-gray-400 mb-0.5">Kompatibilität</p>
                   <p className="text-sm font-medium text-pink-400">Inserat erstellen →</p>
@@ -441,21 +480,11 @@ function DetailContent({ profile, onClose }: { profile: Profile; onClose: () => 
               </button>
             ) : null}
 
-            {/* Key stats */}
             <div className="grid grid-cols-2 gap-3 py-4 border-b border-gray-100">
-              <div className="bg-green-50 rounded-2xl p-3">
-                <p className="text-xs text-gray-400 mb-0.5">Max. Budget</p>
-                <p className="text-base font-bold text-green-700">bis {profile.budgetMax} €<span className="text-sm font-normal">/Mo</span></p>
-              </div>
-              <div className="bg-indigo-50 rounded-2xl p-3">
-                <p className="text-xs text-gray-400 mb-0.5">Einzug ab</p>
-                <p className="text-base font-bold text-indigo-700">
-                  {new Date(profile.movingDate).toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit', year: '2-digit' })}
-                </p>
-              </div>
+              <div className="bg-green-50 rounded-2xl p-3"><p className="text-xs text-gray-400 mb-0.5">Max. Budget</p><p className="text-base font-bold text-green-700">bis {profile.budgetMax} €<span className="text-sm font-normal">/Mo</span></p></div>
+              <div className="bg-indigo-50 rounded-2xl p-3"><p className="text-xs text-gray-400 mb-0.5">Einzug ab</p><p className="text-base font-bold text-indigo-700">{new Date(profile.movingDate).toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit', year: '2-digit' })}</p></div>
             </div>
 
-            {/* Bio */}
             {profile.bio && (
               <div className="py-4 border-b border-gray-100">
                 <SectionTitle>Über mich</SectionTitle>
@@ -463,15 +492,11 @@ function DetailContent({ profile, onClose }: { profile: Profile; onClose: () => 
               </div>
             )}
 
-            {/* Prompts */}
             {profile.prompts && profile.prompts.length > 0 && (
               <div className="py-4 border-b border-gray-100">
                 <div className="flex gap-3 overflow-x-auto no-scrollbar snap-x snap-mandatory -mx-4 px-4 pb-1">
                   {profile.prompts.map((p, i) => (
-                    <div
-                      key={i}
-                      className="flex-shrink-0 w-[82%] snap-center bg-gradient-to-br from-pink-50 to-rose-50 border border-pink-100 rounded-2xl p-4"
-                    >
+                    <div key={i} className="flex-shrink-0 w-[82%] snap-center bg-gradient-to-br from-pink-50 to-rose-50 border border-pink-100 rounded-2xl p-4">
                       <p className="text-xs text-pink-400 font-medium mb-2 leading-snug">{p.question}</p>
                       <p className="text-sm text-gray-800 leading-relaxed">{p.answer}</p>
                     </div>
@@ -479,43 +504,26 @@ function DetailContent({ profile, onClose }: { profile: Profile; onClose: () => 
                 </div>
                 {profile.prompts.length > 1 && (
                   <div className="flex justify-center gap-1.5 mt-2.5">
-                    {profile.prompts.map((_, i) => (
-                      <div key={i} className="w-1.5 h-1.5 rounded-full bg-pink-200" />
-                    ))}
+                    {profile.prompts.map((_, i) => <div key={i} className="w-1.5 h-1.5 rounded-full bg-pink-200" />)}
                   </div>
                 )}
               </div>
             )}
 
-            {/* Detail rows */}
             <div className="py-2">
-              <InfoRow icon={<User className="w-4 h-4 text-pink-500" />} label="Geschlecht">
-                <Badge label={profile.gender} color="pink" />
-              </InfoRow>
-              <InfoRow
-                icon={<RhythmIcon rhythm={profile.dailyRhythm} />}
-                label="Tagesrhythmus"
-              >
-                <RhythmLabel rhythm={profile.dailyRhythm} />
-              </InfoRow>
-              <InfoRow
-                icon={profile.smoker ? <Cigarette className="w-4 h-4 text-amber-500" /> : <CigaretteOff className="w-4 h-4 text-gray-400" />}
-                label="Rauchen"
-              >
+              <InfoRow icon={<User className="w-4 h-4 text-pink-500" />} label="Geschlecht"><Badge label={profile.gender} color="pink" /></InfoRow>
+              <InfoRow icon={<RhythmIcon rhythm={profile.dailyRhythm} />} label="Tagesrhythmus"><RhythmLabel rhythm={profile.dailyRhythm} /></InfoRow>
+              <InfoRow icon={profile.smoker ? <Cigarette className="w-4 h-4 text-amber-500" /> : <CigaretteOff className="w-4 h-4 text-gray-400" />} label="Rauchen">
                 <Badge label={profile.smoker ? 'Raucher' : 'Nichtraucher'} color={profile.smoker ? 'amber' : 'gray'} />
               </InfoRow>
               {profile.languages.length > 0 && (
                 <InfoRow icon={<Languages className="w-4 h-4 text-blue-500" />} label="Sprachen">
-                  <div className="flex flex-wrap gap-1">
-                    {profile.languages.map((l) => <Badge key={l} label={l} color="blue" />)}
-                  </div>
+                  <div className="flex flex-wrap gap-1">{profile.languages.map((l) => <Badge key={l} label={l} color="blue" />)}</div>
                 </InfoRow>
               )}
               {profile.hobbies.length > 0 && (
                 <InfoRow icon={<Tag className="w-4 h-4 text-pink-500" />} label="Hobbys">
-                  <div className="flex flex-wrap gap-1">
-                    {profile.hobbies.map((h) => <Badge key={h} label={h} color="pink" />)}
-                  </div>
+                  <div className="flex flex-wrap gap-1">{profile.hobbies.map((h) => <Badge key={h} label={h} color="pink" />)}</div>
                 </InfoRow>
               )}
             </div>
@@ -535,43 +543,56 @@ function DetailContent({ profile, onClose }: { profile: Profile; onClose: () => 
               </div>
             </div>
           ) : swipeStatus === 'new' ? (
-            <div className="flex gap-3">
+            <div className="space-y-2">
+              <div className="flex gap-3">
+                <button onClick={handleDislike} className="flex-1 py-3.5 rounded-2xl border-2 border-rose-100 bg-rose-50 text-rose-400 font-semibold flex items-center justify-center gap-2 active:scale-95 transition-transform">
+                  <X className="w-5 h-5" strokeWidth={2.5} /> Nein
+                </button>
+                <button onClick={handleLike} className="flex-1 py-3.5 bg-gradient-to-br from-pink-500 to-rose-500 text-white rounded-2xl font-semibold flex items-center justify-center gap-2 active:scale-95 transition-transform shadow-lg">
+                  <Heart className="w-5 h-5 fill-white" /> Ja
+                </button>
+              </div>
               <button
-                onClick={handleDislike}
-                aria-label="Ablehnen"
-                className="flex-1 py-3.5 rounded-2xl border-2 border-rose-100 bg-rose-50 text-rose-400 font-semibold flex items-center justify-center gap-2 active:scale-95 transition-transform"
+                onClick={() => setShowChat(true)}
+                className="w-full py-2.5 rounded-2xl border border-gray-200 text-gray-500 text-sm font-medium flex items-center justify-center gap-1.5 active:bg-gray-50 transition-colors"
               >
-                <X className="w-5 h-5" strokeWidth={2.5} /> Nein
+                <MessageCircle className="w-4 h-4" /> Nachricht schreiben
               </button>
-              <button
-                onClick={handleLike}
-                aria-label="Liken"
-                className="flex-1 py-3.5 bg-gradient-to-br from-pink-500 to-rose-500 text-white rounded-2xl font-semibold flex items-center justify-center gap-2 active:scale-95 transition-transform shadow-lg"
-              >
-                <Heart className="w-5 h-5 fill-white" /> Ja
-              </button>
-            </div>
-          ) : existingMatch ? (
-            <button
-              onClick={openChat}
-              className="w-full py-3.5 bg-gradient-to-br from-pink-500 to-rose-500 text-white rounded-2xl font-semibold flex items-center justify-center gap-2 active:scale-95 transition-transform shadow-lg"
-            >
-              <MessageCircle className="w-5 h-5" />
-              Nachricht schreiben
-            </button>
-          ) : swipeStatus === 'liked' ? (
-            <div className="flex items-center justify-center gap-2 py-2 text-pink-400">
-              <Heart className="w-4 h-4 fill-pink-400" />
-              <span className="text-sm font-medium">Bereits geliked</span>
             </div>
           ) : (
-            <div className="flex items-center justify-center gap-2 py-2 text-gray-400">
-              <X className="w-4 h-4" strokeWidth={2.5} />
-              <span className="text-sm font-medium">Nicht gemocht</span>
-            </div>
+            <button
+              onClick={() => setShowChat(true)}
+              className="w-full py-3.5 bg-gradient-to-br from-pink-500 to-rose-500 text-white rounded-2xl font-semibold flex items-center justify-center gap-2 active:scale-95 transition-transform shadow-lg"
+            >
+              <MessageCircle className="w-5 h-5" /> Nachricht schreiben
+            </button>
           )}
         </div>
       </div>
+
+      {/* Mini-Chat overlay */}
+      <AnimatePresence>
+        {showChat && (
+          <>
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="absolute inset-0 bg-black/30 z-10"
+              onClick={() => setShowChat(false)}
+            />
+            <motion.div
+              initial={{ y: '100%' }}
+              animate={{ y: 0 }}
+              exit={{ y: '100%' }}
+              transition={{ type: 'spring', damping: 30, stiffness: 300 }}
+              className="absolute inset-x-0 bottom-0 z-20 h-[62%] bg-white rounded-t-3xl shadow-2xl flex flex-col"
+            >
+              <MiniChat profile={profile} onClose={() => setShowChat(false)} />
+            </motion.div>
+          </>
+        )}
+      </AnimatePresence>
     </div>
   )
 }

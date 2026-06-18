@@ -1,6 +1,7 @@
 import { createContext, useContext, useState, useCallback, type ReactNode } from 'react'
-import type { Profile, Match, AppView, UserRole, Seeker, Flatshare, ChatMessage } from '../types'
+import type { Profile, Match, AppView, UserRole, Seeker, Flatshare, ChatMessage, WGProfile, DirectConversation } from '../types'
 import { mockSeekers, mockFlatshares } from '../data/mockData'
+import { DEMO_SEEKER, DEMO_WG_PROFILE } from '../data/demoData'
 
 interface AppContextValue {
   userRole: UserRole
@@ -32,6 +33,14 @@ interface AppContextValue {
   unreadMatchCount: number
   readMatchIds: Set<string>
   markMatchRead: (matchId: string) => void
+  myWGProfile: WGProfile | null
+  saveMyWGProfile: (p: WGProfile) => void
+  myAreaTab: 'profile' | 'wg'
+  setMyAreaTab: (tab: 'profile' | 'wg') => void
+  demoMode: boolean
+  setDemoMode: (v: boolean) => void
+  directConversations: DirectConversation[]
+  sendDirectMessage: (profile: Profile, text: string) => void
 }
 
 const AppContext = createContext<AppContextValue | null>(null)
@@ -55,7 +64,11 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const [readMatchIds, setReadMatchIds] = useState<Set<string>>(new Set())
   const [detailProfile, setDetailProfile] = useState<Profile | null>(null)
   const [profileVisible, setProfileVisible] = useState(false)
-  const [myProfile, setMyProfile] = useState<Seeker | null>(null)
+  const [myProfile, setMyProfile] = useState<Seeker | null>(DEMO_SEEKER)
+  const [myWGProfile, setMyWGProfile] = useState<WGProfile | null>(DEMO_WG_PROFILE)
+  const [myAreaTab, setMyAreaTab] = useState<'profile' | 'wg'>('profile')
+  const [demoMode, setDemoMode] = useState(true)
+  const [directConversations, setDirectConversations] = useState<DirectConversation[]>([])
 
   const swipedRight = userRole === 'seeker' ? seekerSwipedRight : wgSwipedRight
   const swipedLeft = userRole === 'seeker' ? seekerSwipedLeft : wgSwipedLeft
@@ -68,6 +81,10 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
   const saveMyProfile = useCallback((profile: Seeker) => {
     setMyProfile(profile)
+  }, [])
+
+  const saveMyWGProfile = useCallback((profile: WGProfile) => {
+    setMyWGProfile(profile)
   }, [])
 
   const markMatchRead = useCallback((matchId: string) => {
@@ -88,7 +105,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
   }, [])
 
   const allProfiles: Profile[] = userRole === 'seeker'
-    ? [...mockFlatshares, ...myListings]
+    ? [...mockFlatshares]
     : [...mockSeekers]
   const queue = allProfiles.filter((p) => !swipedRight.has(p.id) && !swipedLeft.has(p.id))
 
@@ -180,6 +197,20 @@ export function AppProvider({ children }: { children: ReactNode }) {
     setLastSwiped(null)
   }, [lastSwiped])
 
+  const sendDirectMessage = useCallback((profile: Profile, text: string) => {
+    const convId = `dc-${profile.id}`
+    const msg: ChatMessage = { id: `dm-${Date.now()}`, senderId: 'me', text, sentAt: new Date().toISOString() }
+    setDirectConversations((prev) => {
+      const existing = prev.find((c) => c.id === convId)
+      if (existing) {
+        return prev.map((c) => c.id === convId ? { ...c, messages: [...c.messages, msg] } : c)
+      }
+      const name = profile.kind === 'flatshare' ? profile.title : profile.firstName
+      const photo = profile.kind === 'flatshare' ? (profile.images[0] ?? '') : (profile.photos[0] ?? '')
+      return [{ id: convId, profileId: profile.id, profileName: name, profilePhoto: photo, profileKind: profile.kind, startedAt: new Date().toISOString(), messages: [msg] }, ...prev]
+    })
+  }, [])
+
   const sendMessage = useCallback((matchId: string, text: string) => {
     const msg: ChatMessage = {
       id: `msg-${Date.now()}`,
@@ -223,9 +254,17 @@ export function AppProvider({ children }: { children: ReactNode }) {
         setProfileVisible,
         myProfile,
         saveMyProfile,
+        myWGProfile,
+        saveMyWGProfile,
         unreadMatchCount,
         readMatchIds,
         markMatchRead,
+        myAreaTab,
+        setMyAreaTab,
+        demoMode,
+        setDemoMode,
+        directConversations,
+        sendDirectMessage,
       }}
     >
       {children}
