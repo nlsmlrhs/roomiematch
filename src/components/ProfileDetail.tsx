@@ -1,14 +1,15 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
   ArrowLeft, MapPin, Users, ExternalLink,
   Languages, Tag, Sun, Moon, Minus, Cigarette, CigaretteOff, ChevronLeft, ChevronRight,
-  User, CalendarRange,
+  User, CalendarRange, MessageCircle, Heart, X,
   Bath, Shirt, Utensils, Trees, Car, Bike, Archive, ArrowUpDown, Home, Dog, Wind,
   type LucideIcon,
 } from 'lucide-react'
 import { useApp } from '../context/AppContext'
 import type { Profile } from '../types'
+import { computeScore, scoreColor, scoreLabel } from '../utils/matchScore'
 
 const AMENITY_MAP: Record<string, { label: string; Icon: LucideIcon }> = {
   balkon:        { label: 'Balkon',        Icon: Sun },
@@ -88,28 +89,51 @@ function GenderBadges({ genders }: { genders: string[] }) {
   )
 }
 
+// Module-level cache: address string → coords or null (null = not found)
+const coordsCache = new Map<string, [number, number] | null>()
+
 function AddressMap({ address }: { address: string }) {
-  const [coords, setCoords] = useState<[number, number] | null>(null)
+  const [coords, setCoords] = useState<[number, number] | null | undefined>(undefined)
   const [failed, setFailed] = useState(false)
+  const abortRef = useRef<AbortController | null>(null)
 
   useEffect(() => {
-    setCoords(null)
+    if (coordsCache.has(address)) {
+      const cached = coordsCache.get(address)!
+      if (cached) setCoords(cached)
+      else setFailed(true)
+      return
+    }
+
+    setCoords(undefined)
     setFailed(false)
+    abortRef.current?.abort()
+    const controller = new AbortController()
+    abortRef.current = controller
+
     fetch(
       `https://nominatim.openstreetmap.org/search?format=json&limit=1&countrycodes=de&q=${encodeURIComponent(address)}`,
-      { headers: { Accept: 'application/json' } },
+      { headers: { Accept: 'application/json' }, signal: controller.signal },
     )
       .then((r) => r.json())
       .then((data) => {
-        if (data[0]) setCoords([parseFloat(data[0].lat), parseFloat(data[0].lon)])
-        else setFailed(true)
+        if (data[0]) {
+          const result: [number, number] = [parseFloat(data[0].lat), parseFloat(data[0].lon)]
+          coordsCache.set(address, result)
+          setCoords(result)
+        } else {
+          coordsCache.set(address, null)
+          setFailed(true)
+        }
       })
-      .catch(() => setFailed(true))
+      .catch((e) => {
+        if (e.name !== 'AbortError') setFailed(true)
+      })
+
+    return () => controller.abort()
   }, [address])
 
   const mapsUrl = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(address)}`
-
-  if (failed) return null
 
   return (
     <div className="py-4 border-b border-gray-100">
@@ -125,7 +149,14 @@ function AddressMap({ address }: { address: string }) {
         </a>
       </div>
 
-      {!coords ? (
+      {failed ? (
+        <div className="h-24 bg-gray-50 rounded-2xl flex flex-col items-center justify-center gap-1 border border-gray-100">
+          <p className="text-xs text-gray-400">Adresse konnte nicht auf der Karte gefunden werden.</p>
+          <a href={mapsUrl} target="_blank" rel="noopener noreferrer" className="text-xs text-pink-500 font-medium">
+            In Google Maps öffnen →
+          </a>
+        </div>
+      ) : !coords ? (
         <div className="h-44 bg-gray-100 rounded-2xl flex items-center justify-center">
           <p className="text-xs text-gray-400">Karte wird geladen…</p>
         </div>
@@ -143,8 +174,51 @@ function AddressMap({ address }: { address: string }) {
 }
 
 function DetailContent({ profile, onClose }: { profile: Profile; onClose: () => void }) {
+  const { matches, setActiveChatMatchId, setView, setDetailProfile, userRole, myProfile, myListings, swipedRight, swipedLeft, swipeProfile } = useApp()
   const images = profile.kind === 'seeker' ? profile.photos : profile.images
   const [photoIdx, setPhotoIdx] = useState(0)
+  const [justMatched, setJustMatched] = useState(false)
+
+  const existingMatch = matches.find(
+    (m) => m.flatshare.id === profile.id || m.seeker.id === profile.id,
+  )
+
+  const swipeStatus: 'new' | 'liked' | 'disliked' =
+    swipedRight.has(profile.id) ? 'liked' :
+    swipedLeft.has(profile.id) ? 'disliked' : 'new'
+
+  const score =
+    userRole === 'seeker' && myProfile && profile.kind === 'flatshare'
+      ? computeScore(myProfile, profile)
+      : userRole === 'wg' && myListings.length > 0 && profile.kind === 'seeker'
+      ? computeScore(profile, myListings[0])
+      : null
+
+  const scorePlaceholder =
+    (profile.kind === 'flatshare' && userRole === 'seeker' && !myProfile) ||
+    (profile.kind === 'seeker' && userRole === 'wg' && myListings.length === 0)
+
+  function openChat() {
+    if (!existingMatch) return
+    setDetailProfile(null)
+    setActiveChatMatchId(existingMatch.id)
+    setView('matches')
+  }
+
+  function handleLike() {
+    const matched = swipeProfile(profile.id, 'right')
+    if (matched) {
+      setJustMatched(true)
+      setTimeout(() => setDetailProfile(null), 1800)
+    } else {
+      setDetailProfile(null)
+    }
+  }
+
+  function handleDislike() {
+    swipeProfile(profile.id, 'left')
+    setDetailProfile(null)
+  }
 
   return (
     <div className="flex flex-col h-full">
@@ -162,6 +236,7 @@ function DetailContent({ profile, onClose }: { profile: Profile; onClose: () => 
 
         <button
           onClick={onClose}
+          aria-label="Zurück"
           className="absolute top-10 left-4 z-10 w-9 h-9 rounded-full bg-black/30 backdrop-blur-sm flex items-center justify-center active:bg-black/50 transition-colors"
         >
           <ArrowLeft className="w-5 h-5 text-white" />
@@ -173,6 +248,7 @@ function DetailContent({ profile, onClose }: { profile: Profile; onClose: () => 
               onClick={() => setPhotoIdx((i) => Math.max(0, i - 1))}
               className="absolute left-2 top-1/2 -translate-y-1/2 z-10 w-8 h-8 rounded-full bg-black/30 backdrop-blur-sm flex items-center justify-center disabled:opacity-30"
               disabled={photoIdx === 0}
+              aria-label="Vorheriges Foto"
             >
               <ChevronLeft className="w-4 h-4 text-white" />
             </button>
@@ -180,6 +256,7 @@ function DetailContent({ profile, onClose }: { profile: Profile; onClose: () => 
               onClick={() => setPhotoIdx((i) => Math.min(images.length - 1, i + 1))}
               className="absolute right-2 top-1/2 -translate-y-1/2 z-10 w-8 h-8 rounded-full bg-black/30 backdrop-blur-sm flex items-center justify-center disabled:opacity-30"
               disabled={photoIdx === images.length - 1}
+              aria-label="Nächstes Foto"
             >
               <ChevronRight className="w-4 h-4 text-white" />
             </button>
@@ -214,6 +291,28 @@ function DetailContent({ profile, onClose }: { profile: Profile; onClose: () => 
       <div className="flex-1 overflow-y-auto no-scrollbar px-4 pb-8">
         {profile.kind === 'flatshare' ? (
           <>
+            {/* Compatibility score */}
+            {score !== null ? (
+              <div className={`flex items-center justify-between px-3 py-3 rounded-2xl mt-3 ${scoreColor(score)}`}>
+                <div>
+                  <p className="text-xs font-medium opacity-70 mb-0.5">Kompatibilität</p>
+                  <p className="text-sm font-bold">{scoreLabel(score)}</p>
+                </div>
+                <p className="text-4xl font-black">{score}%</p>
+              </div>
+            ) : scorePlaceholder ? (
+              <button
+                onClick={() => { setView('profile-setup'); setDetailProfile(null) }}
+                className="flex items-center justify-between px-3 py-3 rounded-2xl mt-3 bg-gray-50 border border-dashed border-gray-200 w-full text-left"
+              >
+                <div>
+                  <p className="text-xs text-gray-400 mb-0.5">Kompatibilität</p>
+                  <p className="text-sm font-medium text-pink-400">Profil anlegen →</p>
+                </div>
+                <p className="text-4xl font-black text-gray-200">?%</p>
+              </button>
+            ) : null}
+
             {/* Key stats */}
             <div className="grid grid-cols-2 gap-3 py-4 border-b border-gray-100">
               <div className="bg-green-50 rounded-2xl p-3">
@@ -320,6 +419,28 @@ function DetailContent({ profile, onClose }: { profile: Profile; onClose: () => 
           </>
         ) : (
           <>
+            {/* Compatibility score — WG mode */}
+            {score !== null ? (
+              <div className={`flex items-center justify-between px-3 py-3 rounded-2xl mt-3 ${scoreColor(score)}`}>
+                <div>
+                  <p className="text-xs font-medium opacity-70 mb-0.5">Kompatibilität</p>
+                  <p className="text-sm font-bold">{scoreLabel(score)}</p>
+                </div>
+                <p className="text-4xl font-black">{score}%</p>
+              </div>
+            ) : scorePlaceholder ? (
+              <button
+                onClick={() => { setView('my-listings'); setDetailProfile(null) }}
+                className="flex items-center justify-between px-3 py-3 rounded-2xl mt-3 bg-gray-50 border border-dashed border-gray-200 w-full text-left"
+              >
+                <div>
+                  <p className="text-xs text-gray-400 mb-0.5">Kompatibilität</p>
+                  <p className="text-sm font-medium text-pink-400">Inserat erstellen →</p>
+                </div>
+                <p className="text-4xl font-black text-gray-200">?%</p>
+              </button>
+            ) : null}
+
             {/* Key stats */}
             <div className="grid grid-cols-2 gap-3 py-4 border-b border-gray-100">
               <div className="bg-green-50 rounded-2xl p-3">
@@ -400,6 +521,56 @@ function DetailContent({ profile, onClose }: { profile: Profile; onClose: () => 
             </div>
           </>
         )}
+
+        {/* Bottom actions */}
+        <div className="sticky bottom-0 px-4 pb-6 pt-3 bg-gradient-to-t from-white via-white to-transparent">
+          {justMatched ? (
+            <div className="flex items-center gap-3 py-3 px-4 bg-gradient-to-br from-pink-50 to-rose-50 rounded-2xl border border-pink-100">
+              <div className="w-10 h-10 bg-gradient-to-br from-pink-400 to-rose-500 rounded-full flex items-center justify-center flex-shrink-0">
+                <Heart className="w-5 h-5 text-white fill-white" />
+              </div>
+              <div>
+                <p className="font-bold text-gray-800">It's a Match! 🎉</p>
+                <p className="text-xs text-gray-400">Weiterleitung zur Nachricht…</p>
+              </div>
+            </div>
+          ) : swipeStatus === 'new' ? (
+            <div className="flex gap-3">
+              <button
+                onClick={handleDislike}
+                aria-label="Ablehnen"
+                className="flex-1 py-3.5 rounded-2xl border-2 border-rose-100 bg-rose-50 text-rose-400 font-semibold flex items-center justify-center gap-2 active:scale-95 transition-transform"
+              >
+                <X className="w-5 h-5" strokeWidth={2.5} /> Nein
+              </button>
+              <button
+                onClick={handleLike}
+                aria-label="Liken"
+                className="flex-1 py-3.5 bg-gradient-to-br from-pink-500 to-rose-500 text-white rounded-2xl font-semibold flex items-center justify-center gap-2 active:scale-95 transition-transform shadow-lg"
+              >
+                <Heart className="w-5 h-5 fill-white" /> Ja
+              </button>
+            </div>
+          ) : existingMatch ? (
+            <button
+              onClick={openChat}
+              className="w-full py-3.5 bg-gradient-to-br from-pink-500 to-rose-500 text-white rounded-2xl font-semibold flex items-center justify-center gap-2 active:scale-95 transition-transform shadow-lg"
+            >
+              <MessageCircle className="w-5 h-5" />
+              Nachricht schreiben
+            </button>
+          ) : swipeStatus === 'liked' ? (
+            <div className="flex items-center justify-center gap-2 py-2 text-pink-400">
+              <Heart className="w-4 h-4 fill-pink-400" />
+              <span className="text-sm font-medium">Bereits geliked</span>
+            </div>
+          ) : (
+            <div className="flex items-center justify-center gap-2 py-2 text-gray-400">
+              <X className="w-4 h-4" strokeWidth={2.5} />
+              <span className="text-sm font-medium">Nicht gemocht</span>
+            </div>
+          )}
+        </div>
       </div>
     </div>
   )

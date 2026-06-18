@@ -9,8 +9,8 @@ export const mockSeekers: Seeker[] = [
     age: 24,
     gender: 'weiblich',
     photos: [
-      'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=600&q=80',
-      'https://images.unsplash.com/photo-1517841905240-472988babdf9?w=600&q=80',
+      'https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=600&q=80',
+      'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=600&q=80',
     ],
     occupation: 'Architektur-Studentin (5. Sem.)',
     hobbies: ['Klettern', 'Aquarellmalerei', 'Vinylsammeln', 'Kochen'],
@@ -33,7 +33,7 @@ export const mockSeekers: Seeker[] = [
     age: 27,
     gender: 'männlich',
     photos: [
-      'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=600&q=80',
+      'https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?w=600&q=80',
       'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=600&q=80',
     ],
     occupation: 'Software-Entwickler (Remote)',
@@ -57,6 +57,7 @@ export const mockSeekers: Seeker[] = [
     age: 22,
     gender: 'weiblich',
     photos: [
+      'https://images.unsplash.com/photo-1531746020798-e6953c6e8e04?w=600&q=80',
       'https://images.unsplash.com/photo-1529626455594-4ff0802cfb7e?w=600&q=80',
     ],
     occupation: 'Medizin-Studentin (3. Sem.)',
@@ -80,6 +81,7 @@ export const mockSeekers: Seeker[] = [
     gender: 'männlich',
     photos: [
       'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=600&q=80',
+      'https://images.unsplash.com/photo-1463453091185-61582044d556?w=600&q=80',
     ],
     occupation: 'Grafikdesigner (Freelance)',
     hobbies: ['Fotografie', 'Skateboarden', 'Kino', 'Street Food'],
@@ -89,6 +91,9 @@ export const mockSeekers: Seeker[] = [
     budgetMax: 750,
     movingDate: '2026-07-01',
     bio: 'Freelancer mit flexiblen Arbeitszeiten. Rauche nur draußen. Suche kreative Atmosphäre, coole Mitbewohner und gute Lage. Kein Fan von strikten Hausregeln.',
+    prompts: [
+      { question: 'Bei mir zu Hause findet man immer …', answer: 'Eine Kamera, halbfertige Skizzen und mindestens drei verschiedene Kaffeesorten.' },
+    ],
   },
 ]
 
@@ -96,9 +101,10 @@ export const mockFlatshares: Flatshare[] = [
   {
     kind: 'flatshare',
     id: 'f1',
-    title: 'Helles 3er-WG Zimmer in Sachsenhausen',
+    title: 'Helles Altbau-Zimmer in Sachsenhausen',
     images: [
       'https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?w=600&q=80',
+      'https://images.unsplash.com/photo-1556909114-f6e7ad7d3136?w=600&q=80',
       'https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?w=600&q=80',
     ],
     rentMonthly: 620,
@@ -108,7 +114,7 @@ export const mockFlatshares: Flatshare[] = [
     roommates: 2,
     description:
       'Wir sind zwei Freundinnen (25, 26) aus dem Kulturbereich und suchen eine dritte Person, die gerne zusammen kocht, aber auch Eigenraum respektiert. WG-Abende ja, Zwang nein.',
-    tags: ['Kochen zusammen', 'Haustierfreundlich', 'LGBTQ+ freundlich'],
+    tags: ['WG-Abende', 'Gemeinschaft', 'LGBTQ+ freundlich'],
     amenities: ['balkon', 'fahrradkeller', 'haustiere', 'badewanne'],
     roommateLanguages: ['Deutsch', 'Englisch', 'Spanisch'],
     roommateGenders: ['weiblich', 'weiblich'],
@@ -123,8 +129,9 @@ export const mockFlatshares: Flatshare[] = [
     id: 'f2',
     title: 'Ruhiges Zimmer für Remote-Worker – Altbau Nordend',
     images: [
-      'https://images.unsplash.com/photo-1555041469-a586c61ea9bc?w=600&q=80',
+      'https://images.unsplash.com/photo-1554995207-c18c203602cb?w=600&q=80',
       'https://images.unsplash.com/photo-1484101403633-562f891dc89a?w=600&q=80',
+      'https://images.unsplash.com/photo-1555041469-a586c61ea9bc?w=600&q=80',
     ],
     rentMonthly: 850,
     availableFrom: '2026-07-15',
@@ -149,6 +156,8 @@ export const mockFlatshares: Flatshare[] = [
     title: 'Kreative 4er-WG in Bornheim – sucht Energie!',
     images: [
       'https://images.unsplash.com/photo-1493809842364-78817add7ffb?w=600&q=80',
+      'https://images.unsplash.com/photo-1586023492125-27b2c045efd7?w=600&q=80',
+      'https://images.unsplash.com/photo-1565182999561-18d7dc61c393?w=600&q=80',
     ],
     rentMonthly: 490,
     availableFrom: '2026-09-01',
@@ -173,6 +182,8 @@ export const mockFlatshares: Flatshare[] = [
     title: 'Modernes Zimmer in Eckenheim – ruhige Lage',
     images: [
       'https://images.unsplash.com/photo-1502672260266-1c1ef2d93688?w=600&q=80',
+      'https://images.unsplash.com/photo-1484154218962-a197022b5858?w=600&q=80',
+      'https://images.unsplash.com/photo-1616594039964-ae9021a400a0?w=600&q=80',
     ],
     rentMonthly: 580,
     availableFrom: '2026-08-15',
@@ -181,7 +192,7 @@ export const mockFlatshares: Flatshare[] = [
     roommates: 1,
     description:
       'Ich (28, Ingenieur) suche eine zweite Person für meine 2er-WG. Ruhige Gegend, frisch saniertes Bad, große Gemeinschaftsküche. Bin viel unterwegs, daher sehr entspannte Atmosphäre.',
-    tags: ['Ruhig', '2er-WG', 'Neubau', 'Zweck-WG ok'],
+    tags: ['Ruhige Lage', 'Zweck-WG', 'Remote-freundlich'],
     amenities: ['parkplatz', 'badewanne', 'aufzug', 'spuelmaschine', 'klimaanlage'],
     roommateLanguages: ['Deutsch', 'Englisch'],
     roommateGenders: ['männlich'],

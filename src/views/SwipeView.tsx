@@ -1,21 +1,25 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { AnimatePresence, motion } from 'framer-motion'
 import { SwipeCard } from '../components/SwipeCard'
 import { ListView } from './ListView'
 import { useApp } from '../context/AppContext'
-import { Heart, RefreshCw, X, LayoutGrid, List } from 'lucide-react'
+import { Heart, RefreshCw, X, LayoutGrid, List, Undo2 } from 'lucide-react'
 
 export function SwipeView() {
-  const { queue, swipe, userRole, setUserRole } = useApp()
-  const [matchFlash, setMatchFlash] = useState(false)
+  const { queue, swipe, undoSwipe, canUndo, userRole, setUserRole, profileVisible, myProfile, setView } = useApp()
+  const [pendingFlashes, setPendingFlashes] = useState(0)
   const [viewMode, setViewMode] = useState<'card' | 'list'>('card')
+
+  // Auto-dismiss one flash after 2s; if more pending, keep showing
+  useEffect(() => {
+    if (pendingFlashes === 0) return
+    const t = setTimeout(() => setPendingFlashes((n) => Math.max(0, n - 1)), 2000)
+    return () => clearTimeout(t)
+  }, [pendingFlashes])
 
   function handleSwipe(dir: 'left' | 'right') {
     const matched = swipe(dir)
-    if (matched) {
-      setMatchFlash(true)
-      setTimeout(() => setMatchFlash(false), 2000)
-    }
+    if (matched) setPendingFlashes((n) => n + 1)
   }
 
   const visible = queue.slice(0, 2)
@@ -39,6 +43,27 @@ export function SwipeView() {
           </button>
         </div>
       </div>
+
+      {/* No profile nudge */}
+      {userRole === 'seeker' && !myProfile && (
+        <div className="w-full max-w-sm mb-2 flex-shrink-0 bg-pink-50 border border-pink-200 rounded-xl px-3 py-2 flex items-center justify-between gap-2">
+          <p className="text-xs text-pink-700 font-medium">👤 Noch kein Profil angelegt</p>
+          <button
+            onClick={() => setView('profile-setup')}
+            className="text-xs text-pink-500 font-semibold underline underline-offset-2 flex-shrink-0"
+          >
+            Jetzt anlegen
+          </button>
+        </div>
+      )}
+
+      {/* Profile paused banner */}
+      {userRole === 'seeker' && !profileVisible && (
+        <div className="w-full max-w-sm mb-2 flex-shrink-0 bg-amber-50 border border-amber-200 rounded-xl px-3 py-2 flex items-center gap-2">
+          <span className="text-base">💤</span>
+          <p className="text-xs text-amber-700 font-medium">Dein Profil ist pausiert — WGs sehen dich nicht</p>
+        </div>
+      )}
 
       {/* View mode toggle */}
       <div className="w-full max-w-sm flex justify-end gap-1 mb-2 flex-shrink-0">
@@ -76,15 +101,28 @@ export function SwipeView() {
           </div>
 
           {/* Action buttons */}
-          <div className="flex-shrink-0 flex justify-center gap-10 py-4">
+          <div className="flex-shrink-0 flex justify-center items-center gap-6 py-4">
             <button
               onClick={() => handleSwipe('left')}
+              aria-label="Ablehnen"
               className="w-16 h-16 rounded-full bg-white shadow-lg border border-rose-100 flex items-center justify-center active:scale-90 transition-transform"
             >
               <X className="w-8 h-8 text-rose-400" />
             </button>
+
+            {/* Undo — only visible when canUndo */}
+            <button
+              onClick={undoSwipe}
+              disabled={!canUndo}
+              aria-label="Letzten Swipe rückgängig machen"
+              className={`w-10 h-10 rounded-full bg-white shadow border border-gray-100 flex items-center justify-center transition-all ${canUndo ? 'text-amber-400 active:scale-90' : 'text-gray-200 cursor-not-allowed'}`}
+            >
+              <Undo2 className="w-5 h-5" />
+            </button>
+
             <button
               onClick={() => handleSwipe('right')}
+              aria-label="Liken"
               className="w-16 h-16 rounded-full bg-gradient-to-br from-pink-500 to-rose-500 shadow-lg flex items-center justify-center active:scale-90 transition-transform"
             >
               <Heart className="w-8 h-8 text-white fill-white" />
@@ -97,19 +135,24 @@ export function SwipeView() {
 
       {/* Match flash overlay */}
       <AnimatePresence>
-        {matchFlash && (
+        {pendingFlashes > 0 && (
           <motion.div
+            key="flash"
             initial={{ opacity: 0, scale: 0.8 }}
             animate={{ opacity: 1, scale: 1 }}
             exit={{ opacity: 0, scale: 0.8 }}
             className="absolute inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm"
+            onClick={() => setPendingFlashes(0)}
           >
             <div className="bg-white rounded-3xl px-10 py-8 text-center shadow-2xl">
               <div className="w-20 h-20 bg-gradient-to-br from-pink-400 to-rose-500 rounded-full flex items-center justify-center mx-auto mb-4">
                 <Heart className="w-10 h-10 text-white fill-white" />
               </div>
-              <h3 className="text-2xl font-bold text-gray-900">It's a Match!</h3>
+              <h3 className="text-2xl font-bold text-gray-900">
+                {pendingFlashes > 1 ? `${pendingFlashes}× Match! 🎉` : "It's a Match!"}
+              </h3>
               <p className="text-gray-500 mt-1">Schreib einfach eine Nachricht 💬</p>
+              <p className="text-xs text-gray-300 mt-3">Tippen zum Schließen</p>
             </div>
           </motion.div>
         )}

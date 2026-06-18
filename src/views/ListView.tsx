@@ -3,6 +3,7 @@ import { MapPin, Euro, Calendar, Wifi, Heart, X, Sparkles, Users } from 'lucide-
 import type { Profile } from '../types'
 import { useApp } from '../context/AppContext'
 import { OccupancyStrip } from '../components/OccupancyStrip'
+import { computeScore, scoreColor } from '../utils/matchScore'
 
 type FilterMode = 'new' | 'liked' | 'disliked'
 
@@ -52,18 +53,34 @@ function StatusBadge({ status }: { status: FilterMode }) {
 }
 
 function ListItem({ profile, status }: { profile: Profile; status: FilterMode }) {
-  const { setDetailProfile } = useApp()
+  const { setDetailProfile, userRole, myProfile, myListings } = useApp()
   const images = profile.kind === 'seeker' ? profile.photos : profile.images
   const photo = images[0]
 
+  const score =
+    userRole === 'seeker' && myProfile && profile.kind === 'flatshare'
+      ? computeScore(myProfile, profile)
+      : userRole === 'wg' && myListings.length > 0 && profile.kind === 'seeker'
+      ? computeScore(profile, myListings[0])
+      : null
+
   if (profile.kind === 'flatshare') {
     return (
-      <div onClick={() => setDetailProfile(profile)} className="bg-white rounded-2xl overflow-hidden flex flex-col border border-pink-100 shadow-sm cursor-pointer active:scale-[0.98] transition-transform">
+      <div
+        onClick={() => setDetailProfile(profile)}
+        className="bg-white rounded-2xl overflow-hidden flex flex-col border border-pink-100 shadow-sm cursor-pointer active:scale-[0.98] transition-transform"
+      >
         <div className="relative w-full h-48 bg-gradient-to-br from-pink-200 to-purple-200 flex items-center justify-center flex-shrink-0">
           {photo ? (
             <img src={photo} alt={profile.title} className="w-full h-full object-cover" />
           ) : (
             <span className="text-5xl">🏠</span>
+          )}
+          {/* Score badge top-left */}
+          {score !== null && (
+            <div className={`absolute top-2 left-2 px-2 py-0.5 rounded-full text-xs font-bold shadow-sm ${scoreColor(score)}`}>
+              {score} %
+            </div>
           )}
           <StatusBadge status={status} />
         </div>
@@ -99,13 +116,22 @@ function ListItem({ profile, status }: { profile: Profile; status: FilterMode })
     )
   }
 
+  // Seeker card
   return (
-    <div onClick={() => setDetailProfile(profile)} className="bg-white rounded-2xl overflow-hidden flex flex-col border border-pink-100 shadow-sm cursor-pointer active:scale-[0.98] transition-transform">
+    <div
+      onClick={() => setDetailProfile(profile)}
+      className="bg-white rounded-2xl overflow-hidden flex flex-col border border-pink-100 shadow-sm cursor-pointer active:scale-[0.98] transition-transform"
+    >
       <div className="relative w-full h-48 bg-gradient-to-br from-pink-200 to-purple-200 flex items-center justify-center flex-shrink-0">
         {photo ? (
           <img src={photo} alt={profile.firstName} className="w-full h-full object-cover" />
         ) : (
           <span className="text-5xl">👤</span>
+        )}
+        {score !== null && (
+          <div className={`absolute top-2 left-2 px-2 py-0.5 rounded-full text-xs font-bold shadow-sm ${scoreColor(score)}`}>
+            {score} %
+          </div>
         )}
         <StatusBadge status={status} />
       </div>

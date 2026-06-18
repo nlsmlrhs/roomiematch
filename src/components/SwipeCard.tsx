@@ -7,6 +7,7 @@ import {
 import type { Profile } from '../types'
 import { useApp } from '../context/AppContext'
 import { OccupancyStrip } from './OccupancyStrip'
+import { computeScore, scoreColor } from '../utils/matchScore'
 
 interface Props {
   profile: Profile
@@ -41,7 +42,13 @@ function RhythmIcon({ rhythm }: { rhythm: string }) {
 }
 
 export function SwipeCard({ profile, onSwipe, zIndex = 0, isTop = false }: Props) {
-  const { setDetailProfile } = useApp()
+  const { setDetailProfile, userRole, myProfile, myListings } = useApp()
+  const score =
+    userRole === 'seeker' && myProfile && profile.kind === 'flatshare'
+      ? computeScore(myProfile, profile)
+      : userRole === 'wg' && myListings.length > 0 && profile.kind === 'seeker'
+      ? computeScore(profile, myListings[0])
+      : null
   const [photoIdx, setPhotoIdx] = useState(0)
   const [expanded, setExpanded] = useState(false)
   const x = useMotionValue(0)
@@ -108,6 +115,13 @@ export function SwipeCard({ profile, onSwipe, zIndex = 0, isTop = false }: Props
                 ))}
               </div>
             </>
+          )}
+
+          {/* Score badge — top-left */}
+          {score !== null && (
+            <div className={`absolute top-3 left-3 z-10 px-2.5 py-1 rounded-xl text-xs font-bold shadow-sm backdrop-blur-sm ${scoreColor(score)}`}>
+              {score}%
+            </div>
           )}
 
           {/* Info button */}

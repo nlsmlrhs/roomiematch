@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { motion } from 'framer-motion'
 import { Check, ChevronRight, Upload, X, Plus } from 'lucide-react'
 import { useApp } from '../context/AppContext'
-import type { DailyRhythm, ProfilePrompt } from '../types'
+import type { DailyRhythm, ProfilePrompt, Seeker } from '../types'
 
 const PROMPT_QUESTIONS = [
   'Was ich an meiner zukünftigen WG schätzen würde …',
@@ -70,8 +70,9 @@ function Input({ ...props }: React.InputHTMLAttributes<HTMLInputElement>) {
 }
 
 export function ProfileSetup() {
-  const { setView, profileVisible, setProfileVisible } = useApp()
+  const { setView, profileVisible, setProfileVisible, saveMyProfile } = useApp()
   const [saved, setSaved] = useState(false)
+  const [errors, setErrors] = useState<Record<string, string>>({})
 
   const [firstName, setFirstName] = useState('')
   const [age, setAge] = useState('')
@@ -85,14 +86,31 @@ export function ProfileSetup() {
   const [bio, setBio] = useState('')
   const [prompts, setPrompts] = useState<ProfilePrompt[]>([])
 
+  const usedQuestions = new Set(prompts.map((p) => p.question))
+
   function addPrompt() {
-    if (prompts.length < 3) setPrompts([...prompts, { question: PROMPT_QUESTIONS[0], answer: '' }])
+    const nextQuestion = PROMPT_QUESTIONS.find((q) => !usedQuestions.has(q))
+    if (prompts.length < 3 && nextQuestion) {
+      setPrompts([...prompts, { question: nextQuestion, answer: '' }])
+    }
   }
   function removePrompt(i: number) {
     setPrompts(prompts.filter((_, idx) => idx !== i))
   }
   function updatePrompt(i: number, field: keyof ProfilePrompt, value: string) {
-    setPrompts(prompts.map((p, idx) => idx === i ? { ...p, [field]: value } : p))
+    setPrompts(prompts.map((p, idx) => (idx === i ? { ...p, [field]: value } : p)))
+  }
+
+  function validate(): boolean {
+    const e: Record<string, string> = {}
+    if (!firstName.trim()) e.firstName = 'Bitte gib deinen Vornamen ein.'
+    const ageNum = parseInt(age)
+    if (!age || ageNum < 16 || ageNum > 99) e.age = 'Bitte ein gültiges Alter (16–99) eingeben.'
+    const budgetNum = parseInt(budget)
+    if (!budget || budgetNum <= 0) e.budget = 'Bitte ein Budget über 0 € eingeben.'
+    if (!movingDate) e.movingDate = 'Bitte ein Einzugsdatum wählen.'
+    setErrors(e)
+    return Object.keys(e).length === 0
   }
 
   if (saved) {
@@ -140,10 +158,10 @@ export function ProfileSetup() {
         <button
           type="button"
           onClick={() => setProfileVisible(!profileVisible)}
-          className={`relative w-12 h-6 rounded-full transition-colors flex-shrink-0 ${profileVisible ? 'bg-green-400' : 'bg-gray-300'}`}
+          className={`relative w-12 h-6 rounded-full transition-colors duration-200 flex-shrink-0 ${profileVisible ? 'bg-green-400' : 'bg-gray-300'}`}
         >
           <span
-            className={`absolute top-0.5 w-5 h-5 bg-white rounded-full shadow transition-transform ${profileVisible ? 'translate-x-6' : 'translate-x-0.5'}`}
+            className={`absolute top-0.5 h-5 w-5 bg-white rounded-full shadow transition-all duration-200 ${profileVisible ? 'left-[26px]' : 'left-[2px]'}`}
           />
         </button>
       </div>
@@ -163,9 +181,11 @@ export function ProfileSetup() {
 
         <Field label="Vorname">
           <Input placeholder="Lena" value={firstName} onChange={(e) => setFirstName(e.target.value)} />
+          {errors.firstName && <p className="text-xs text-rose-500 mt-1">{errors.firstName}</p>}
         </Field>
         <Field label="Alter">
           <Input type="number" placeholder="24" value={age} onChange={(e) => setAge(e.target.value)} />
+          {errors.age && <p className="text-xs text-rose-500 mt-1">{errors.age}</p>}
         </Field>
         <Field label="Beruf / Studium">
           <Input placeholder="z.B. Architektur-Studentin" value={occupation} onChange={(e) => setOccupation(e.target.value)} />
@@ -196,7 +216,9 @@ export function ProfileSetup() {
                   className="w-full bg-white rounded-xl px-3 py-2 text-xs text-gray-600 border border-gray-200 outline-none pr-2"
                 >
                   {PROMPT_QUESTIONS.map((q) => (
-                    <option key={q} value={q}>{q}</option>
+                    <option key={q} value={q} disabled={usedQuestions.has(q) && q !== p.question}>
+                      {q}
+                    </option>
                   ))}
                 </select>
                 <textarea
@@ -255,13 +277,38 @@ export function ProfileSetup() {
         </Field>
         <Field label="Max. Budget (€/Monat)">
           <Input type="number" placeholder="650" value={budget} onChange={(e) => setBudget(e.target.value)} />
+          {errors.budget && <p className="text-xs text-rose-500 mt-1">{errors.budget}</p>}
         </Field>
         <Field label="Einzug ab">
           <Input type="date" value={movingDate} onChange={(e) => setMovingDate(e.target.value)} />
+          {errors.movingDate && <p className="text-xs text-rose-500 mt-1">{errors.movingDate}</p>}
         </Field>
 
         <button
-          onClick={() => setSaved(true)}
+          onClick={() => {
+            if (!validate()) return
+            const seeker: Seeker = {
+              kind: 'seeker',
+              id: 'me',
+              firstName: firstName.trim() || 'Du',
+              lastName: '',
+              age: parseInt(age) || 0,
+              gender: 'divers',
+              photos: [],
+              occupation: occupation.trim(),
+              hobbies,
+              languages,
+              smoker,
+              dailyRhythm: rhythm,
+              budgetMax: parseInt(budget) || 0,
+              movingDate,
+              bio: bio.trim(),
+              prompts: prompts.filter((p) => p.answer.trim()),
+            }
+            saveMyProfile(seeker)
+            setProfileVisible(true)
+            setSaved(true)
+          }}
           className="w-full py-3.5 bg-gradient-to-br from-pink-500 to-rose-500 text-white rounded-2xl font-semibold text-base active:scale-95 transition-transform flex items-center justify-center gap-2"
         >
           Profil speichern <ChevronRight className="w-5 h-5" />
