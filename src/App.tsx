@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react'
+import wohniLogo from './logos/wohni_logo.svg'
 import { AnimatePresence } from 'framer-motion'
 import { AppProvider, useApp } from './context/AppContext'
 import { SwipeView } from './views/SwipeView'
@@ -17,9 +18,7 @@ function AppShell() {
       {/* Top bar */}
       <header className="flex-shrink-0 px-4 pt-10 pb-3 bg-white/80 backdrop-blur border-b border-pink-100/60">
         <div className="flex items-center justify-between">
-          <h1 className="text-xl font-bold bg-gradient-to-r from-pink-500 to-rose-500 bg-clip-text text-transparent">
-            Wohni
-          </h1>
+          <img src={wohniLogo} alt="Wohni" className="h-8 w-auto object-contain" />
           <span className="text-xs bg-gradient-to-r from-pink-500 to-rose-500 text-white px-3 py-1 rounded-full font-medium shadow-sm">
             {view === 'swipe' ? '🏠 Entdecken' : view === 'matches' ? '💬 Matches' : view === 'my-listings' ? '🏢 Inserate' : '👤 Profil'}
           </span>

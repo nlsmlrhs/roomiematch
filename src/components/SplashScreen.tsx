@@ -1,4 +1,5 @@
 import { motion } from 'framer-motion'
+import wohniLogo from '../logos/wohni_logo.svg'
 
 export function SplashScreen() {
   return (
@@ -16,7 +17,7 @@ export function SplashScreen() {
         animate={{ scale: 1, opacity: 1, y: 0 }}
         transition={{ duration: 0.5, ease: [0.34, 1.56, 0.64, 1] }}
       >
-        <span className="text-5xl">🏠</span>
+        <img src={wohniLogo} alt="Wohni" className="w-16 h-16 object-contain" />
       </motion.div>
 
       {/* Wordmark */}
