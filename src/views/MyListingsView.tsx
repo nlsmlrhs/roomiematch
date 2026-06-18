@@ -102,7 +102,8 @@ function GenderCounter({
         <button
           type="button"
           onClick={() => onChange(Math.max(0, count - 1))}
-          className="w-7 h-7 rounded-full bg-gray-100 text-gray-600 flex items-center justify-center font-bold text-lg leading-none active:bg-gray-200 transition-colors"
+          disabled={count === 0}
+          className="w-7 h-7 rounded-full bg-gray-100 text-gray-600 flex items-center justify-center font-bold text-lg leading-none active:bg-gray-200 transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
         >
           −
         </button>
@@ -170,7 +171,12 @@ function ListingForm({
     set('roommateGenders', buildGendersArray(updated))
   }
 
-  const valid = form.title.trim() && form.address.trim() && form.rentMonthly > 0 && form.availableFrom
+  const valid =
+    form.title.trim() &&
+    form.address.trim() &&
+    form.rentMonthly > 0 &&
+    form.availableFrom &&
+    form.preferredAgeMin < form.preferredAgeMax
 
   return (
     <div className="flex-1 overflow-y-auto no-scrollbar pb-8">
@@ -309,17 +315,28 @@ function ListingForm({
                   type="number"
                   placeholder="18"
                   value={form.preferredAgeMin || ''}
-                  onChange={(e) => set('preferredAgeMin', Number(e.target.value))}
+                  onChange={(e) => {
+                    const v = Number(e.target.value)
+                    set('preferredAgeMin', v)
+                    if (v >= form.preferredAgeMax) set('preferredAgeMax', v + 1)
+                  }}
                 />
                 <span className="text-gray-400 text-sm flex-shrink-0">bis</span>
                 <Input
                   type="number"
                   placeholder="40"
                   value={form.preferredAgeMax || ''}
-                  onChange={(e) => set('preferredAgeMax', Number(e.target.value))}
+                  onChange={(e) => {
+                    const v = Number(e.target.value)
+                    set('preferredAgeMax', v)
+                    if (v <= form.preferredAgeMin) set('preferredAgeMin', Math.max(16, v - 1))
+                  }}
                 />
                 <span className="text-gray-400 text-sm flex-shrink-0">Jahre</span>
               </div>
+              {form.preferredAgeMin >= form.preferredAgeMax && (
+                <p className="text-xs text-rose-500 mt-1">Min. muss kleiner als Max. sein.</p>
+              )}
             </Field>
           </div>
         </div>

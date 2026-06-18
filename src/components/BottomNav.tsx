@@ -10,19 +10,21 @@ const tabs: { view: AppView; icon: typeof Home; label: string }[] = [
 ]
 
 export function BottomNav() {
-  const { view, setView, matches, profileVisible } = useApp()
+  const { view, setView, unreadMatchCount, profileVisible } = useApp()
 
   return (
     <nav className="flex-shrink-0 bg-white border-t border-pink-100 flex safe-bottom">
       {tabs.map(({ view: v, icon: Icon, label }) => {
         const active = view === v
-        const badge = v === 'matches' && matches.length > 0
+        const badge = v === 'matches' && unreadMatchCount > 0
         const pauseDot = v === 'profile-setup' && !profileVisible
 
         return (
           <button
             key={v}
             onClick={() => setView(v)}
+            aria-label={label}
+            aria-current={active ? 'page' : undefined}
             className="flex-1 flex flex-col items-center justify-center py-2.5 gap-0.5 relative transition-colors"
           >
             {active && (
@@ -35,7 +37,7 @@ export function BottomNav() {
               />
               {badge && (
                 <span className="absolute -top-1 -right-1 w-4 h-4 bg-gradient-to-br from-pink-500 to-rose-500 text-white text-[9px] font-bold rounded-full flex items-center justify-center shadow-sm">
-                  {matches.length}
+                  {unreadMatchCount}
                 </span>
               )}
               {pauseDot && (
