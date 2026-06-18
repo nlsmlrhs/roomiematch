@@ -174,7 +174,7 @@ function AddressMap({ address }: { address: string }) {
 }
 
 function DetailContent({ profile, onClose }: { profile: Profile; onClose: () => void }) {
-  const { matches, setActiveChatMatchId, setView, setDetailProfile, userRole, myProfile, myListings, swipedRight, swipedLeft, swipeProfile } = useApp()
+  const { matches, setActiveChatMatchId, setView, setDetailProfile, userRole, myProfile, myListings, swipedRight, swipedLeft, swipeProfile, setMyAreaTab } = useApp()
   const images = profile.kind === 'seeker' ? profile.photos : profile.images
   const [photoIdx, setPhotoIdx] = useState(0)
   const [justMatched, setJustMatched] = useState(false)
@@ -302,7 +302,7 @@ function DetailContent({ profile, onClose }: { profile: Profile; onClose: () => 
               </div>
             ) : scorePlaceholder ? (
               <button
-                onClick={() => { setView('profile-setup'); setDetailProfile(null) }}
+                onClick={() => { setMyAreaTab('profile'); setView('my-area'); setDetailProfile(null) }}
                 className="flex items-center justify-between px-3 py-3 rounded-2xl mt-3 bg-gray-50 border border-dashed border-gray-200 w-full text-left"
               >
                 <div>
@@ -340,6 +340,23 @@ function DetailContent({ profile, onClose }: { profile: Profile; onClose: () => 
               <div className="py-4 border-b border-gray-100">
                 <SectionTitle>Über die WG</SectionTitle>
                 <p className="text-sm text-gray-600 leading-relaxed">{profile.description}</p>
+              </div>
+            )}
+
+            {/* Mitbewohner-Profile */}
+            {profile.roommateProfiles && profile.roommateProfiles.length > 0 && (
+              <div className="py-4 border-b border-gray-100">
+                <SectionTitle>Deine zukünftigen Mitbewohner</SectionTitle>
+                <div className="flex gap-3 overflow-x-auto no-scrollbar snap-x snap-mandatory -mx-4 px-4 pb-2 mt-3">
+                  {profile.roommateProfiles.map((r, i) => (
+                    <div key={i} className="flex-shrink-0 w-48 snap-center bg-gray-50 rounded-2xl p-3 border border-gray-100">
+                      <img src={r.photo} alt={r.name} className="w-full h-28 object-cover rounded-xl mb-2" />
+                      <p className="font-semibold text-sm text-gray-900">{r.name}, {r.age}</p>
+                      <p className="text-xs text-gray-400 mb-1">{r.occupation}</p>
+                      <p className="text-xs text-gray-600 leading-relaxed line-clamp-3">{r.bio}</p>
+                    </div>
+                  ))}
+                </div>
               </div>
             )}
 
@@ -430,7 +447,7 @@ function DetailContent({ profile, onClose }: { profile: Profile; onClose: () => 
               </div>
             ) : scorePlaceholder ? (
               <button
-                onClick={() => { setView('my-listings'); setDetailProfile(null) }}
+                onClick={() => { setMyAreaTab('listings'); setView('my-area'); setDetailProfile(null) }}
                 className="flex items-center justify-between px-3 py-3 rounded-2xl mt-3 bg-gray-50 border border-dashed border-gray-200 w-full text-left"
               >
                 <div>

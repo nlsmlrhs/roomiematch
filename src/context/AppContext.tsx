@@ -32,6 +32,8 @@ interface AppContextValue {
   unreadMatchCount: number
   readMatchIds: Set<string>
   markMatchRead: (matchId: string) => void
+  myAreaTab: 'profile' | 'listings'
+  setMyAreaTab: (tab: 'profile' | 'listings') => void
 }
 
 const AppContext = createContext<AppContextValue | null>(null)
@@ -56,6 +58,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const [detailProfile, setDetailProfile] = useState<Profile | null>(null)
   const [profileVisible, setProfileVisible] = useState(false)
   const [myProfile, setMyProfile] = useState<Seeker | null>(null)
+  const [myAreaTab, setMyAreaTab] = useState<'profile' | 'listings'>('profile')
 
   const swipedRight = userRole === 'seeker' ? seekerSwipedRight : wgSwipedRight
   const swipedLeft = userRole === 'seeker' ? seekerSwipedLeft : wgSwipedLeft
@@ -226,6 +229,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
         unreadMatchCount,
         readMatchIds,
         markMatchRead,
+        myAreaTab,
+        setMyAreaTab,
       }}
     >
       {children}

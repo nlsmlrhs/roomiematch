@@ -6,7 +6,7 @@ import { useApp } from '../context/AppContext'
 import { Heart, RefreshCw, X, LayoutGrid, List, Undo2 } from 'lucide-react'
 
 export function SwipeView() {
-  const { queue, swipe, undoSwipe, canUndo, userRole, setUserRole, profileVisible, myProfile, setView } = useApp()
+  const { queue, swipe, undoSwipe, canUndo, userRole, setUserRole, profileVisible, myProfile, setView, setMyAreaTab } = useApp()
   const [pendingFlashes, setPendingFlashes] = useState(0)
   const [viewMode, setViewMode] = useState<'card' | 'list'>('card')
 
@@ -49,7 +49,7 @@ export function SwipeView() {
         <div className="w-full max-w-sm mb-2 flex-shrink-0 bg-pink-50 border border-pink-200 rounded-xl px-3 py-2 flex items-center justify-between gap-2">
           <p className="text-xs text-pink-700 font-medium">👤 Noch kein Profil angelegt</p>
           <button
-            onClick={() => setView('profile-setup')}
+            onClick={() => { setMyAreaTab('profile'); setView('my-area') }}
             className="text-xs text-pink-500 font-semibold underline underline-offset-2 flex-shrink-0"
           >
             Jetzt anlegen

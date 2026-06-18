@@ -1,12 +1,11 @@
-import { Home, Heart, User, Building2 } from 'lucide-react'
+import { Home, Heart, LayoutGrid } from 'lucide-react'
 import { useApp } from '../context/AppContext'
 import type { AppView } from '../types'
 
 const tabs: { view: AppView; icon: typeof Home; label: string }[] = [
-  { view: 'swipe', icon: Home, label: 'Entdecken' },
-  { view: 'matches', icon: Heart, label: 'Matches' },
-  { view: 'my-listings', icon: Building2, label: 'Inserate' },
-  { view: 'profile-setup', icon: User, label: 'Profil' },
+  { view: 'swipe',    icon: Home,        label: 'Entdecken' },
+  { view: 'matches',  icon: Heart,       label: 'Matches' },
+  { view: 'my-area',  icon: LayoutGrid,  label: 'Mein' },
 ]
 
 export function BottomNav() {
@@ -17,7 +16,7 @@ export function BottomNav() {
       {tabs.map(({ view: v, icon: Icon, label }) => {
         const active = view === v
         const badge = v === 'matches' && unreadMatchCount > 0
-        const pauseDot = v === 'profile-setup' && !profileVisible
+        const pauseDot = v === 'my-area' && !profileVisible
 
         return (
           <button

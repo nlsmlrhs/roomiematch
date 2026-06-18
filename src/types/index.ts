@@ -27,6 +27,14 @@ export interface Seeker {
   prompts?: ProfilePrompt[]
 }
 
+export interface RoommateProfile {
+  name: string
+  age: number
+  occupation: string
+  photo: string
+  bio: string
+}
+
 export interface Flatshare {
   kind: 'flatshare'
   id: string
@@ -42,6 +50,7 @@ export interface Flatshare {
   amenities: string[]
   roommateLanguages: string[]
   roommateGenders: string[]
+  roommateProfiles?: RoommateProfile[]
   preferredGender: PreferredGender
   smokingAllowed: boolean
   wgRhythm: DailyRhythm
@@ -68,6 +77,6 @@ export interface ChatMessage {
   sentAt: string
 }
 
-export type AppView = 'swipe' | 'matches' | 'profile-setup' | 'my-listings'
+export type AppView = 'swipe' | 'matches' | 'my-area'
 
 export type UserRole = 'seeker' | 'wg'

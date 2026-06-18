@@ -1,4 +1,4 @@
-import type { Seeker, Flatshare, Match } from '../types'
+import type { Seeker, Flatshare, Match, RoommateProfile } from '../types'
 
 export const mockSeekers: Seeker[] = [
   {
@@ -97,6 +97,73 @@ export const mockSeekers: Seeker[] = [
   },
 ]
 
+const roommateProfiles: Record<string, RoommateProfile[]> = {
+  f1: [
+    {
+      name: 'Sophie',
+      age: 25,
+      occupation: 'Kulturmanagerin',
+      photo: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=400&q=80',
+      bio: 'Liebe Konzerte, Ausstellungen und lange Abende in der Küche. Bin viel unterwegs, aber immer gerne zu Hause wenn Besuch kommt.',
+    },
+    {
+      name: 'Clara',
+      age: 26,
+      occupation: 'Illustratorin (Freelance)',
+      photo: 'https://images.unsplash.com/photo-1517841905240-472988babdf9?w=400&q=80',
+      bio: 'Arbeite tagsüber von zu Hause, abends gerne gemeinsam kochen oder einen Film schauen. Pflanzen-Enthusiastin.',
+    },
+  ],
+  f2: [
+    {
+      name: 'Lukas',
+      age: 29,
+      occupation: 'Backend-Entwickler (Remote)',
+      photo: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400&q=80',
+      bio: 'Remote-Dev seit 4 Jahren. Tagsüber fokussiert, abends gerne Brettspiele oder kochen. Stehe auf guten Kaffee.',
+    },
+    {
+      name: 'Alex',
+      age: 27,
+      occupation: 'UX-Designerin',
+      photo: 'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=400&q=80',
+      bio: 'Divers, kreativ, ruhig. Mag strukturierte Abläufe und ein sauberes Zuhause. Kein Fan von Lärm nach 22 Uhr.',
+    },
+  ],
+  f3: [
+    {
+      name: 'Jana',
+      age: 23,
+      occupation: 'Designstudentin',
+      photo: 'https://images.unsplash.com/photo-1524504388940-b1c1722653e1?w=400&q=80',
+      bio: 'Illustriere, male, bastle — die Wohnung ist mein Atelier. WG-Abende sind Pflicht, Chaos ist willkommen.',
+    },
+    {
+      name: 'Mira',
+      age: 24,
+      occupation: 'Musikerin & Lehrerin',
+      photo: 'https://images.unsplash.com/photo-1508214751196-bcfd4ca60f91?w=400&q=80',
+      bio: 'Spiele Gitarre und unterrichte nachmittags. Verbringe die Abende gerne zusammen und bin immer für spontane Partys zu haben.',
+    },
+    {
+      name: 'Finn',
+      age: 26,
+      occupation: 'Sozialarbeiter',
+      photo: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=400&q=80',
+      bio: 'Kommunikativer Typ, koche gerne für die ganze WG. Bin meistens abends da und liebe Gesellschaft.',
+    },
+  ],
+  f4: [
+    {
+      name: 'Markus',
+      age: 28,
+      occupation: 'Ingenieur (Automotive)',
+      photo: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=400&q=80',
+      bio: 'Bin oft auf Dienstreise, daher sehr entspannte WG-Atmosphäre. Wenn ich da bin, koche ich gerne und bin leise.',
+    },
+  ],
+}
+
 export const mockFlatshares: Flatshare[] = [
   {
     kind: 'flatshare',
@@ -114,6 +181,7 @@ export const mockFlatshares: Flatshare[] = [
     roommates: 2,
     description:
       'Wir sind zwei Freundinnen (25, 26) aus dem Kulturbereich und suchen eine dritte Person, die gerne zusammen kocht, aber auch Eigenraum respektiert. WG-Abende ja, Zwang nein.',
+    roommateProfiles: roommateProfiles.f1,
     tags: ['WG-Abende', 'Gemeinschaft', 'LGBTQ+ freundlich'],
     amenities: ['balkon', 'fahrradkeller', 'haustiere', 'badewanne'],
     roommateLanguages: ['Deutsch', 'Englisch', 'Spanisch'],
@@ -140,6 +208,7 @@ export const mockFlatshares: Flatshare[] = [
     roommates: 2,
     description:
       'Zwei Devs suchen dritten Mitbewohner. Alle arbeiten remote – stilles Arbeitsklima tagsüber, gesellige Abende optional. Fiber-Leitung, stehende Schreibtische, 3 Bäder.',
+    roommateProfiles: roommateProfiles.f2,
     tags: ['Remote-freundlich', 'Zweck-WG', 'Keine Partys'],
     amenities: ['aufzug', 'keller', 'parkplatz', 'moebliert'],
     roommateLanguages: ['Deutsch', 'Englisch'],
@@ -166,6 +235,7 @@ export const mockFlatshares: Flatshare[] = [
     roommates: 3,
     description:
       'Wir sind eine bunte WG aus Designerin, Musikerin und Sozialarbeiter. Das Zimmer ist kompakt aber die Gemeinschaft ist groß. Wir feiern gerne, kochen oft zusammen und haben immer ein offenes Ohr.',
+    roommateProfiles: roommateProfiles.f3,
     tags: ['Kreativ', 'Gemeinschaft', 'WG-Abende'],
     amenities: ['garten', 'haustiere', 'balkon', 'waschmaschine'],
     roommateLanguages: ['Deutsch', 'Englisch', 'Französisch'],
@@ -192,6 +262,7 @@ export const mockFlatshares: Flatshare[] = [
     roommates: 1,
     description:
       'Ich (28, Ingenieur) suche eine zweite Person für meine 2er-WG. Ruhige Gegend, frisch saniertes Bad, große Gemeinschaftsküche. Bin viel unterwegs, daher sehr entspannte Atmosphäre.',
+    roommateProfiles: roommateProfiles.f4,
     tags: ['Ruhige Lage', 'Zweck-WG', 'Remote-freundlich'],
     amenities: ['parkplatz', 'badewanne', 'aufzug', 'spuelmaschine', 'klimaanlage'],
     roommateLanguages: ['Deutsch', 'Englisch'],

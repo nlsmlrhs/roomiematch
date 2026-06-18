@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { ArrowLeft, Send, MessageCircle, Info } from 'lucide-react'
+import { ArrowLeft, Send, MessageCircle, Info, Video, X } from 'lucide-react'
 import { useApp } from '../context/AppContext'
 import type { Match } from '../types'
 
@@ -99,6 +99,12 @@ function ChatScreen({
 }) {
   const { setDetailProfile } = useApp()
   const [input, setInput] = useState('')
+  const [showVideoHint, setShowVideoHint] = useState(false)
+
+  function handleVideoPress() {
+    setShowVideoHint(true)
+    setTimeout(() => setShowVideoHint(false), 2500)
+  }
 
   const iAmSeeker = match.seeker.id === 'me'
   const name = iAmSeeker ? match.flatshare.title : `${match.seeker.firstName}${match.seeker.lastName ? ' ' + match.seeker.lastName : ''}`
@@ -137,7 +143,32 @@ function ChatScreen({
           </div>
           <Info className="w-4 h-4 text-gray-300 flex-shrink-0" />
         </button>
+        <button
+          onClick={handleVideoPress}
+          aria-label="Videoanruf"
+          className="p-2 rounded-full active:bg-gray-100 transition-colors flex-shrink-0"
+        >
+          <Video className="w-5 h-5 text-gray-400" />
+        </button>
       </div>
+
+      {/* Video hint banner */}
+      <AnimatePresence>
+        {showVideoHint && (
+          <motion.div
+            initial={{ opacity: 0, y: -8 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -8 }}
+            transition={{ duration: 0.2 }}
+            className="flex items-center justify-between gap-2 px-4 py-2.5 bg-indigo-50 border-b border-indigo-100 flex-shrink-0"
+          >
+            <p className="text-sm text-indigo-700 font-medium">Video-Besichtigungen kommen bald 🎥</p>
+            <button onClick={() => setShowVideoHint(false)} className="text-indigo-400 active:text-indigo-600">
+              <X className="w-4 h-4" />
+            </button>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* Messages */}
       <div className="flex-1 overflow-y-auto no-scrollbar px-4 py-4 space-y-3">
