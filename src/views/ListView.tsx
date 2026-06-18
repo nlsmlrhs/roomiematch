@@ -1,11 +1,12 @@
 import { useState } from 'react'
 import { MapPin, Euro, Calendar, Wifi, Heart, X, Sparkles, Users } from 'lucide-react'
-import type { Profile } from '../types'
+import type { Flatshare, Profile, Seeker } from '../types'
 import { useApp } from '../context/AppContext'
 import { OccupancyStrip } from '../components/OccupancyStrip'
 import { computeScore, scoreColor } from '../utils/matchScore'
 
 type FilterMode = 'new' | 'liked' | 'disliked'
+type SortMode = 'score' | 'price' | 'date'
 
 function Badge({ label, color = 'gray' }: { label: string; color?: string }) {
   const palettes: Record<string, string> = {
@@ -76,7 +77,6 @@ function ListItem({ profile, status }: { profile: Profile; status: FilterMode })
           ) : (
             <span className="text-5xl">🏠</span>
           )}
-          {/* Score badge top-left */}
           {score !== null && (
             <div className={`absolute top-2 left-2 px-2 py-0.5 rounded-full text-xs font-bold shadow-sm ${scoreColor(score)}`}>
               {score} %
@@ -155,15 +155,50 @@ function ListItem({ profile, status }: { profile: Profile; status: FilterMode })
   )
 }
 
+function sortProfiles(
+  profiles: Profile[],
+  sort: SortMode,
+  myProfile: Seeker | null,
+  myListings: Flatshare[],
+): Profile[] {
+  const firstListing = myListings[0] ?? null
+  return [...profiles].sort((a, b) => {
+    if (sort === 'score') {
+      const getScore = (p: Profile) => {
+        if (p.kind === 'flatshare' && myProfile) return computeScore(myProfile, p)
+        if (p.kind === 'seeker' && firstListing) return computeScore(p, firstListing)
+        return 0
+      }
+      return getScore(b) - getScore(a)
+    }
+    if (sort === 'price') {
+      const pa = a.kind === 'flatshare' ? a.rentMonthly : a.budgetMax
+      const pb = b.kind === 'flatshare' ? b.rentMonthly : b.budgetMax
+      return pa - pb
+    }
+    // date
+    const da = a.kind === 'flatshare' ? a.availableFrom : a.movingDate
+    const db = b.kind === 'flatshare' ? b.availableFrom : b.movingDate
+    return da.localeCompare(db)
+  })
+}
+
 const FILTER_TABS: { mode: FilterMode; icon: React.ReactNode; label: string }[] = [
-  { mode: 'new', icon: <Sparkles className="w-3.5 h-3.5" />, label: 'Neu' },
-  { mode: 'liked', icon: <Heart className="w-3.5 h-3.5 fill-current" />, label: 'Geliked' },
-  { mode: 'disliked', icon: <X className="w-3.5 h-3.5" strokeWidth={2.5} />, label: 'Disliked' },
+  { mode: 'new',      icon: <Sparkles className="w-3.5 h-3.5" />,                    label: 'Neu' },
+  { mode: 'liked',    icon: <Heart className="w-3.5 h-3.5 fill-current" />,           label: 'Geliked' },
+  { mode: 'disliked', icon: <X className="w-3.5 h-3.5" strokeWidth={2.5} />,          label: 'Disliked' },
+]
+
+const SORT_OPTIONS: { mode: SortMode; icon: React.ReactNode; label: string }[] = [
+  { mode: 'score', icon: <Sparkles className="w-3 h-3" />, label: 'Best Match' },
+  { mode: 'price', icon: <Euro className="w-3 h-3" />,     label: 'Preis' },
+  { mode: 'date',  icon: <Calendar className="w-3 h-3" />, label: 'Einzug' },
 ]
 
 export function ListView() {
-  const { allProfiles, swipedRight, swipedLeft } = useApp()
+  const { allProfiles, swipedRight, swipedLeft, myProfile, myListings } = useApp()
   const [filter, setFilter] = useState<FilterMode>('new')
+  const [sort, setSort] = useState<SortMode>('score')
 
   const newProfiles = allProfiles.filter((p) => !swipedRight.has(p.id) && !swipedLeft.has(p.id))
   const likedProfiles = allProfiles.filter((p) => swipedRight.has(p.id))
@@ -175,21 +210,39 @@ export function ListView() {
     disliked: dislikedProfiles.length,
   }
 
-  const displayed = filter === 'new' ? newProfiles : filter === 'liked' ? likedProfiles : dislikedProfiles
+  const raw = filter === 'new' ? newProfiles : filter === 'liked' ? likedProfiles : dislikedProfiles
+  const displayed = sortProfiles(raw, sort, myProfile, myListings)
 
   const tabColors: Record<FilterMode, { active: string; dot: string }> = {
-    new: { active: 'text-green-600 border-green-500', dot: 'bg-green-500' },
-    liked: { active: 'text-pink-600 border-pink-500', dot: 'bg-pink-500' },
-    disliked: { active: 'text-rose-600 border-rose-500', dot: 'bg-rose-500' },
+    new:      { active: 'text-green-600 border-green-500', dot: 'bg-green-500' },
+    liked:    { active: 'text-pink-600 border-pink-500',   dot: 'bg-pink-500' },
+    disliked: { active: 'text-rose-600 border-rose-500',   dot: 'bg-rose-500' },
   }
 
   return (
     <div className="flex-1 overflow-y-auto no-scrollbar w-full">
       {/* Header */}
-      <div className="px-4 py-3 bg-gradient-to-r from-pink-50 to-rose-50 border-b border-pink-100">
+      <div className="px-4 pt-3 pb-2.5 bg-gradient-to-r from-pink-50 to-rose-50 border-b border-pink-100">
         <h2 className="text-base font-bold bg-gradient-to-r from-pink-500 to-rose-500 bg-clip-text text-transparent">
-          {allProfiles.length} {allProfiles.length !== 1 ? 'Profile' : 'Profil'} in deiner Nähe
+          Mainz
         </h2>
+        {/* Sort chips */}
+        <div className="flex gap-1.5 mt-2">
+          {SORT_OPTIONS.map(({ mode, icon, label }) => (
+            <button
+              key={mode}
+              onClick={() => setSort(mode)}
+              className={`flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold transition-colors ${
+                sort === mode
+                  ? 'bg-pink-500 text-white shadow-sm'
+                  : 'bg-white text-gray-400 border border-gray-200'
+              }`}
+            >
+              {icon}
+              {label}
+            </button>
+          ))}
+        </div>
       </div>
 
       {/* Filter tabs */}

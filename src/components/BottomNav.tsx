@@ -1,11 +1,12 @@
-import { Home, Heart, LayoutGrid } from 'lucide-react'
+import { Home, MessageCircle, LayoutGrid, ClipboardList } from 'lucide-react'
 import { useApp } from '../context/AppContext'
 import type { AppView } from '../types'
 
 const tabs: { view: AppView; icon: typeof Home; label: string }[] = [
-  { view: 'swipe',    icon: Home,        label: 'Entdecken' },
-  { view: 'matches',  icon: Heart,       label: 'Matches' },
-  { view: 'my-area',  icon: LayoutGrid,  label: 'Mein' },
+  { view: 'swipe',    icon: Home,          label: 'Entdecken' },
+  { view: 'matches',  icon: MessageCircle, label: 'Nachrichten' },
+  { view: 'listings', icon: ClipboardList, label: 'Inserate' },
+  { view: 'my-area',  icon: LayoutGrid,    label: 'Mein' },
 ]
 
 export function BottomNav() {

@@ -3,14 +3,21 @@ import { AnimatePresence, motion } from 'framer-motion'
 import { SwipeCard } from '../components/SwipeCard'
 import { ListView } from './ListView'
 import { useApp } from '../context/AppContext'
-import { Heart, RefreshCw, X, LayoutGrid, List, Undo2 } from 'lucide-react'
+import { Heart, RefreshCw, X, LayoutGrid, List, Undo2, Lock } from 'lucide-react'
 
 export function SwipeView() {
-  const { queue, swipe, undoSwipe, canUndo, userRole, setUserRole, profileVisible, myProfile, setView, setMyAreaTab } = useApp()
+  const {
+    queue, swipe, undoSwipe, canUndo,
+    userRole, setUserRole,
+    profileVisible, myProfile, myListings,
+    setView, setMyAreaTab,
+  } = useApp()
   const [pendingFlashes, setPendingFlashes] = useState(0)
   const [viewMode, setViewMode] = useState<'card' | 'list'>('card')
 
-  // Auto-dismiss one flash after 2s; if more pending, keep showing
+  const canSwipe = userRole === 'seeker' ? !!myProfile : myListings.length > 0
+  const effectiveViewMode = canSwipe ? viewMode : 'list'
+
   useEffect(() => {
     if (pendingFlashes === 0) return
     const t = setTimeout(() => setPendingFlashes((n) => Math.max(0, n - 1)), 2000)
@@ -30,13 +37,13 @@ export function SwipeView() {
       <div className="w-full max-w-sm mb-3 flex-shrink-0">
         <div className="flex bg-gray-100 rounded-2xl p-1 gap-1">
           <button
-            onClick={() => { setUserRole('seeker'); setViewMode('card') }}
+            onClick={() => setUserRole('seeker')}
             className={`flex-1 py-2 rounded-xl text-sm font-semibold transition-all duration-200 ${userRole === 'seeker' ? 'bg-white shadow-sm text-pink-500' : 'text-gray-400'}`}
           >
             🏠 WGs
           </button>
           <button
-            onClick={() => { setUserRole('wg'); setViewMode('card') }}
+            onClick={() => setUserRole('wg')}
             className={`flex-1 py-2 rounded-xl text-sm font-semibold transition-all duration-200 ${userRole === 'wg' ? 'bg-white shadow-sm text-pink-500' : 'text-gray-400'}`}
           >
             👤 Suchende
@@ -44,21 +51,8 @@ export function SwipeView() {
         </div>
       </div>
 
-      {/* No profile nudge */}
-      {userRole === 'seeker' && !myProfile && (
-        <div className="w-full max-w-sm mb-2 flex-shrink-0 bg-pink-50 border border-pink-200 rounded-xl px-3 py-2 flex items-center justify-between gap-2">
-          <p className="text-xs text-pink-700 font-medium">👤 Noch kein Profil angelegt</p>
-          <button
-            onClick={() => { setMyAreaTab('profile'); setView('my-area') }}
-            className="text-xs text-pink-500 font-semibold underline underline-offset-2 flex-shrink-0"
-          >
-            Jetzt anlegen
-          </button>
-        </div>
-      )}
-
       {/* Profile paused banner */}
-      {userRole === 'seeker' && !profileVisible && (
+      {userRole === 'seeker' && myProfile && !profileVisible && (
         <div className="w-full max-w-sm mb-2 flex-shrink-0 bg-amber-50 border border-amber-200 rounded-xl px-3 py-2 flex items-center gap-2">
           <span className="text-base">💤</span>
           <p className="text-xs text-amber-700 font-medium">Dein Profil ist pausiert — WGs sehen dich nicht</p>
@@ -68,21 +62,50 @@ export function SwipeView() {
       {/* View mode toggle */}
       <div className="w-full max-w-sm flex justify-end gap-1 mb-2 flex-shrink-0">
         <button
-          onClick={() => setViewMode('card')}
-          className={`p-1.5 rounded-lg transition-colors ${viewMode === 'card' ? 'text-pink-500 bg-pink-50' : 'text-gray-300'}`}
+          onClick={() => { if (canSwipe) setViewMode('card') }}
+          disabled={!canSwipe}
+          title={!canSwipe ? (userRole === 'seeker' ? 'Profil erforderlich' : 'Inserat erforderlich') : undefined}
+          className={`p-1.5 rounded-lg transition-colors ${
+            !canSwipe
+              ? 'text-gray-200 cursor-not-allowed'
+              : effectiveViewMode === 'card'
+              ? 'text-pink-500 bg-pink-50'
+              : 'text-gray-300'
+          }`}
         >
           <LayoutGrid className="w-5 h-5" />
         </button>
         <button
           onClick={() => setViewMode('list')}
-          className={`p-1.5 rounded-lg transition-colors ${viewMode === 'list' ? 'text-pink-500 bg-pink-50' : 'text-gray-300'}`}
+          className={`p-1.5 rounded-lg transition-colors ${effectiveViewMode === 'list' ? 'text-pink-500 bg-pink-50' : 'text-gray-300'}`}
         >
           <List className="w-5 h-5" />
         </button>
       </div>
 
-      {viewMode === 'list' ? (
-        <ListView />
+      {effectiveViewMode === 'list' ? (
+        <>
+          {!canSwipe && (
+            <div className="w-full max-w-sm mb-2 flex-shrink-0 bg-pink-50 border border-pink-200 rounded-xl px-3 py-2.5 flex items-center justify-between gap-2">
+              <div className="flex items-center gap-2">
+                <Lock className="w-3.5 h-3.5 text-pink-400 flex-shrink-0" />
+                <p className="text-xs text-pink-700 font-medium">
+                  {userRole === 'seeker' ? 'Erstelle dein Profil um zu swipen' : 'Erstelle ein Inserat um zu swipen'}
+                </p>
+              </div>
+              <button
+                onClick={() => {
+                  if (userRole === 'seeker') { setMyAreaTab('profile'); setView('my-area') }
+                  else setView('listings')
+                }}
+                className="text-xs text-pink-500 font-semibold underline underline-offset-2 flex-shrink-0"
+              >
+                Jetzt anlegen
+              </button>
+            </div>
+          )}
+          <ListView />
+        </>
       ) : visible.length > 0 ? (
         <>
           {/* Card stack */}
@@ -110,7 +133,6 @@ export function SwipeView() {
               <X className="w-8 h-8 text-rose-400" />
             </button>
 
-            {/* Undo — only visible when canUndo */}
             <button
               onClick={undoSwipe}
               disabled={!canUndo}

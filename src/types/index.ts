@@ -35,6 +35,21 @@ export interface RoommateProfile {
   bio: string
 }
 
+export interface WGProfile {
+  name: string
+  address: string
+  description: string
+  images: string[]
+  roommateProfiles: RoommateProfile[]
+  pendingInvites: string[]
+  amenities: string[]
+  tags: string[]
+  internetSpeed: string
+  wgRhythm: DailyRhythm
+  smokingAllowed: boolean
+  roommateLanguages: string[]
+}
+
 export interface Flatshare {
   kind: 'flatshare'
   id: string
@@ -77,6 +92,16 @@ export interface ChatMessage {
   sentAt: string
 }
 
-export type AppView = 'swipe' | 'matches' | 'my-area'
+export interface DirectConversation {
+  id: string
+  profileId: string
+  profileName: string
+  profilePhoto: string
+  profileKind: 'seeker' | 'flatshare'
+  startedAt: string
+  messages: ChatMessage[]
+}
+
+export type AppView = 'swipe' | 'matches' | 'listings' | 'my-area'
 
 export type UserRole = 'seeker' | 'wg'
